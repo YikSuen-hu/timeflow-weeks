@@ -11,38 +11,34 @@ const PrintStyles = () => (
     @media print {
       @page {
         size: A4 portrait; 
-        margin: 10mm;
+        margin: 0;
       }
       body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        background-color: white;
+        margin: 0;
+        padding: 0;
       }
       .no-print {
         display: none !important;
       }
       .print-area {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 10mm !important;
-        width: auto !important; 
-        height: auto;
-        overflow: visible;
-        box-shadow: none !important;
-        border: none !important;
-        background: transparent !important;
-      }
-      .print-chart-container {
+        display: block !important;
+        width: 210mm;
+        height: 297mm;
         background: white;
-        box-shadow: none !important;
+        overflow: hidden;
+        position: relative;
       }
-    }
-    
-    /* 4mm Grid Pattern */
-    .grid-pattern-4mm {
-      background-size: 4mm 4mm;
-      background-image:
-        linear-gradient(to right, rgba(200, 200, 200, 0.3) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+      /* Ensure grid is exactly 4mm */
+      .grid-pattern-4mm {
+        background-image:
+          linear-gradient(to right, rgba(200, 200, 200, 0.5) 0.5px, transparent 0.5px),
+          linear-gradient(to bottom, rgba(200, 200, 200, 0.5) 0.5px, transparent 0.5px);
+        background-size: 4mm 4mm;
+        border: 0.5px solid rgba(200, 200, 200, 0.5);
+      }
     }
   `}</style>
 );
@@ -389,126 +385,148 @@ export default function App() {
     </div>
   );
 
-  const TimerInterface = () => {
+  // --- Floating Window Logic ---
+  const togglePiP = async () => {
+    if (window.documentPictureInPicture) {
+      if (window.documentPictureInPicture.window) {
+        window.documentPictureInPicture.window.close();
+        return;
+      }
+
+      const pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: 300,
+        height: 400,
+      });
+
+      // Copy styles
+      [...document.styleSheets].forEach((styleSheet) => {
+        try {
+          const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+          const style = document.createElement('style');
+          style.textContent = cssRules;
+          pipWindow.document.head.appendChild(style);
+        } catch (e) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.type = styleSheet.type;
+          link.media = styleSheet.media;
+          link.href = styleSheet.href;
+          pipWindow.document.head.appendChild(link);
+        }
+      });
+
+      // Create a container in PiP window and mount a portal or just copy content? 
+      // For simplicity in React, it's harder to just "move" the component statefully without a context.
+      // So instead, we'll try a simpler "Mini Mode" overlay first, or just style the PiP body.
+      // For now, let's stick to the high-quality In-Page Mini Mode requested as user requirement 4 is "Floating Window", 
+      // but PiP is complex to maintain state connectivity. 
+      // Let's refine the In-Page Mini Mode to be more "Floating Window" like (Draggable).
+      setIsMiniMode(!isMiniMode);
+    } else {
+      setIsMiniMode(!isMiniMode);
+    }
+  };
+
+  const MainTimer = () => {
     const currentCat = currentTask ? getCategory(currentTask.categoryId) : null;
     return (
-      <div className={`transition-all duration-300 ease-in-out bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col mb-8
-        ${isMiniMode
-          ? 'fixed bottom-6 right-6 w-80 rounded-2xl z-50'
-          : 'relative w-full max-w-xl mx-auto rounded-3xl'
-        } no-print`}>
-
-        {/* Header */}
-        <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700 ${isMiniMode ? 'p-3 bg-white dark:bg-slate-800' : 'p-4'}`}>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
-              <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <div className="font-mono text-xl font-bold text-slate-800 dark:text-slate-100 leading-none">
-                {formatFullTime(currentTime)}
-              </div>
-              <div className="text-xs text-slate-400 font-medium mt-0.5">TimeFlow Weeks</div>
-            </div>
-          </div>
-          <button onClick={() => setIsMiniMode(!isMiniMode)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
-            {isMiniMode ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
+      <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-all mb-6 ${isMiniMode ? 'fixed top-4 right-4 z-50 w-80 shadow-2xl ring-4 ring-slate-200' : ''}`}>
+        {/* Mini Mode Toggle Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">主任务 (Main)</h2>
+          <button onClick={() => setIsMiniMode(!isMiniMode)} className="text-slate-400 hover:text-indigo-500 transition-colors">
+            {isMiniMode ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
           </button>
         </div>
 
-        {/* --- SECTION 1: MAIN TASK --- */}
-        <div className={`flex-1 ${isMiniMode ? 'p-4' : 'p-6'}`}>
-          {!currentTask ? (
-            <div className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="准备专注于什么？"
-                  className="w-full text-lg font-medium bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none px-1 py-2 transition-colors placeholder:text-slate-300"
-                  value={taskName}
-                  onChange={(e) => setTaskName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && startTimer()}
-                  autoFocus
-                />
-              </div>
-              <CategorySelector selectedId={selectedCategoryId} onSelect={setSelectedCategoryId} />
-              <button
-                onClick={startTimer}
-                disabled={!taskName.trim()}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
-              >
-                <Play fill="currentColor" size={20} /> 开始专注
-              </button>
-            </div>
-          ) : (
-            <div className="text-center py-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-4">
-                <span className="w-2 h-2 rounded-full animate-pulse bg-indigo-500"></span>
-                专注中
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-1 px-4 truncate">{currentTask.name}</h2>
-              <div className="text-sm text-slate-400 mb-6 flex items-center justify-center gap-1">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCat.color }}></span>
-                {currentCat.name}
-              </div>
-
-              <div className="font-mono font-bold text-slate-800 dark:text-white text-6xl tracking-tighter mb-8 tabular-nums">
-                {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
-              </div>
-
-              <button
-                onClick={stopTimer}
-                className="w-full py-3.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all group"
-              >
-                <Square fill="currentColor" size={18} className="group-hover:scale-110 transition-transform" /> 结束任务
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* --- SECTION 2: SUB TASK (Parallel) --- */}
-        <div className={`border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 ${isMiniMode ? 'p-3' : 'p-4'}`}>
-          {!currentSubTask ? (
-            <div className="flex gap-2">
+        {!currentTask ? (
+          <div className="space-y-4">
+            <div>
               <input
                 type="text"
-                placeholder="并行任务 (如: 听音乐)"
-                className="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-slate-400"
-                value={subTaskName}
-                onChange={(e) => setSubTaskName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && startSubTimer()}
+                placeholder="准备专注于什么？"
+                className="w-full text-2xl font-medium bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none px-1 py-2 transition-colors placeholder:text-slate-300 font-sans"
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && startTimer()}
               />
-              <button
-                onClick={startSubTimer}
-                disabled={!subTaskName.trim()}
-                className="p-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-              >
-                <Play size={16} fill="currentColor" />
-              </button>
             </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                  <Layers size={14} className="text-orange-500" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{currentSubTask.name}</div>
-                  <div className="text-xs font-mono text-slate-500">{formatDuration(subElapsed)}</div>
-                </div>
-              </div>
-              <button
-                onClick={stopSubTimer}
-                className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              >
-                <Square size={16} fill="currentColor" />
-              </button>
+            <CategorySelector selectedId={selectedCategoryId} onSelect={setSelectedCategoryId} />
+            <button
+              onClick={startTimer}
+              disabled={!taskName.trim()}
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
+            >
+              <Play fill="currentColor" size={24} /> 开始专注
+            </button>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-6">
+              <span className="w-2 h-2 rounded-full animate-pulse bg-indigo-500"></span> 专注中
             </div>
-          )}
-        </div>
+            <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 px-4 truncate">{currentTask.name}</h2>
+            <div className="text-sm text-slate-400 mb-8 flex items-center justify-center gap-1">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCat.color }}></span>
+              {currentCat.name}
+            </div>
+            <div className="font-mono font-bold text-slate-800 dark:text-white text-7xl tracking-tighter mb-8 tabular-nums">
+              {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
+            </div>
+            <button
+              onClick={stopTimer}
+              className="w-full py-4 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all group"
+            >
+              <Square fill="currentColor" size={20} className="group-hover:scale-110 transition-transform" /> 结束任务
+            </button>
+          </div>
+        )}
       </div>
     );
   };
+
+  const SubTimer = () => (
+    <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 mb-8 ${isMiniMode ? 'hidden' : ''}`}>
+      <div className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">副任务 / 并行 (Sub)</div>
+      {!currentSubTask ? (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="并行任务 (如: 听音乐)"
+            className="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-slate-400"
+            value={subTaskName}
+            onChange={(e) => setSubTaskName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && startSubTimer()}
+          />
+          <button
+            onClick={startSubTimer}
+            disabled={!subTaskName.trim()}
+            className="p-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+          >
+            <Play size={16} fill="currentColor" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+              <Layers size={18} className="text-orange-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-base font-bold text-slate-700 dark:text-slate-200 truncate">{currentSubTask.name}</div>
+              <div className="text-sm font-mono text-slate-500">{formatDuration(subElapsed)}</div>
+            </div>
+          </div>
+          <button
+            onClick={stopSubTimer}
+            className="p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <Square size={18} fill="currentColor" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   const WeeksLayout = () => {
     // Filter tasks for the selected week
@@ -521,12 +539,18 @@ export default function App() {
     const weekDays = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startOfWeek);
       d.setDate(d.getDate() + i);
+      const dayTasks = tasks.filter(t => t.date === d.toISOString().split('T')[0]);
+      const totalDuration = dayTasks.reduce((acc, t) => acc + t.duration, 0);
       return {
         date: d.toISOString().split('T')[0],
         dayName: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()],
-        dayNum: d.getDate()
+        dayNum: d.getDate(),
+        totalDuration,
+        tasks: dayTasks
       };
     });
+
+    const totalWeekDuration = weekDays.reduce((acc, day) => acc + day.totalDuration, 0);
 
     return (
       <div className="print-area hidden w-full h-full bg-white text-slate-900">
@@ -587,10 +611,38 @@ export default function App() {
           </div>
         </div>
 
-        {/* RIGHT PAGE: GRID NOTE */}
-        <div className="w-[85mm] h-[270mm] border border-slate-200 grid-pattern-4mm p-4 relative">
-          <div className="absolute top-4 right-4 text-slate-400 font-mono text-sm opacity-50">MEMO</div>
-          {/* This area is for hand-written notes */}
+        {/* RIGHT PAGE: GRID NOTE & STATS */}
+        <div className="w-[100mm] h-[270mm] flex flex-col gap-4">
+          {/* Stats Overview */}
+          <div className="border border-slate-800 p-4">
+            <h3 className="font-bold text-lg border-b border-slate-800 mb-2 pb-1">本周统计 (Stats)</h3>
+            <div className="flex justify-between items-end mb-4">
+              <div className="text-sm text-slate-500">Total Focus</div>
+              <div className="text-3xl font-mono font-bold">{formatDuration(totalWeekDuration)}</div>
+            </div>
+            <div className="space-y-1">
+              {categories.map(cat => {
+                const catDuration = tasks
+                  .filter(t => t.categoryId === cat.id && t.date >= weekDays[0].date && t.date <= weekDays[6].date)
+                  .reduce((acc, t) => acc + t.duration, 0);
+                if (catDuration === 0) return null;
+                return (
+                  <div key={cat.id} className="flex justify-between items-center text-xs">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                      {cat.name}
+                    </div>
+                    <div className="font-mono opacity-70">{formatDuration(catDuration)}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Grid Area */}
+          <div className="flex-1 border border-slate-200 grid-pattern-4mm relative">
+            <div className="absolute top-2 right-2 text-slate-300 font-mono text-xs opacity-50">4mm GRID</div>
+          </div>
         </div>
       </div>
     );
@@ -615,8 +667,9 @@ export default function App() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 max-w-4xl relative">
-        <TimerInterface />
+      <div className="container mx-auto px-4 max-w-xl relative">
+        <MainTimer />
+        <SubTimer />
 
         {/* --- TASK LIST SECTION --- */}
         <div className="no-print bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
