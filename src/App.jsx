@@ -236,69 +236,71 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
   return (
     <div className="print-area flex flex-row">
       {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
-      <div className="flex-shrink-0 flex pt-[10mm] border-r border-slate-300 mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
-        {/* Axis */}
-        <div className="w-8 flex-shrink-0 flex flex-col mr-1">
-          {/* Spacer to match Header height exactly */}
-          <div className="h-[10mm] mb-[1px]" />
+      <div className="flex-shrink-0 pt-[10mm] mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
+        <div className="flex h-full border-r border-slate-300">
+          {/* Axis */}
+          <div className="w-8 flex-shrink-0 flex flex-col mr-1">
+            {/* Spacer to match Header height exactly (including border thickness) */}
+            <div className="h-[10mm] border-b border-transparent mb-[1px]" />
 
-          <div className="relative w-full h-[168mm]">
-            {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
-              // Y position in cells
-              let cellY = i < 18 ? i * 2 : 36 + (i - 18);
-              return (
-                <div key={i} className="absolute w-full text-right text-[8px] text-slate-400 font-mono leading-none border-t border-slate-200 pr-1"
-                  style={{ top: `${cellY * 4}mm`, height: i < 18 ? '8mm' : '4mm' }}>
-                  <span className="-translate-y-1/2 block">{h}</span>
-                </div>
-              )
-            })}
+            <div className="relative w-full h-[168mm]">
+              {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
+                // Y position in cells
+                let cellY = i < 18 ? i * 2 : 36 + (i - 18);
+                return (
+                  <div key={i} className="absolute w-full text-right text-[8px] text-slate-400 font-mono leading-none border-t border-slate-200 pr-1"
+                    style={{ top: `${cellY * 4}mm`, height: i < 18 ? '8mm' : '4mm' }}>
+                    <span className="-translate-y-1/2 block">{h}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* The 28mm Strip */}
-        <div className="flex flex-col w-[28mm]">
-          {/* Header */}
-          <div className="flex h-[10mm] border-b border-black items-end pb-1 mb-[1px]">
-            {weekDays.map(day => (
-              <div key={day.date} className="w-[4mm] text-center flex flex-col justify-end">
-                <div className="text-[6px] text-slate-500 uppercase leading-none scale-75">{day.dayName}</div>
-                <div className="font-bold text-[8px] leading-none">{day.dayNum}</div>
-              </div>
-            ))}
-          </div>
-          {/* Grid */}
-          <div className="relative w-[28mm] h-[168mm] border-t border-slate-200">
-            {/* BG Grid Lines (42 Rows) */}
-            {Array.from({ length: 42 }).map((_, i) => (
-              <div key={i} className="absolute w-full border-b border-slate-100 box-border" style={{ top: `${(i + 1) * 4}mm`, height: '0' }}></div>
-            ))}
-            {/* BG Cols (7 Cols) */}
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="absolute h-full border-r border-slate-100 box-border" style={{ left: `${(i + 1) * 4}mm`, width: '0' }}></div>
-            ))}
-
-            {/* Columns & Tasks */}
-            <div className="absolute inset-0 flex">
+          {/* The 28mm Strip */}
+          <div className="flex flex-col w-[28mm]">
+            {/* Header */}
+            <div className="flex h-[10mm] border-b border-black items-end pb-1 mb-[1px]">
               {weekDays.map(day => (
-                <div key={day.date} className="w-[4mm] relative h-full border-r border-slate-200 box-border">
-                  {day.tasks.map(t => {
-                    const pos = getPosition(new Date(t.startTime), t.duration);
-                    const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc' };
-                    return (
-                      <div key={t.id}
-                        className="absolute left-[0.2mm] right-[0.2mm] rounded-[1px] overflow-hidden flex items-center justify-center border border-white/30"
-                        style={{ top: pos.top, height: pos.height, backgroundColor: cat.color, zIndex: 10 }}
-                      >
-                        <span className="text-white text-[3px] font-bold tracking-tight opacity-90 block"
-                          style={{ writingMode: 'vertical-rl', textOrientation: 'upright', maxHeight: '100%' }}>
-                          {t.name.slice(0, 3)}
-                        </span>
-                      </div>
-                    )
-                  })}
+                <div key={day.date} className="w-[4mm] text-center flex flex-col justify-end">
+                  <div className="text-[6px] text-slate-500 uppercase leading-none scale-75">{day.dayName}</div>
+                  <div className="font-bold text-[8px] leading-none">{day.dayNum}</div>
                 </div>
               ))}
+            </div>
+            {/* Grid */}
+            <div className="relative w-[28mm] h-[168mm] border-t border-slate-200">
+              {/* BG Grid Lines (42 Rows) */}
+              {Array.from({ length: 42 }).map((_, i) => (
+                <div key={i} className="absolute w-full border-b border-slate-100 box-border" style={{ top: `${(i + 1) * 4}mm`, height: '0' }}></div>
+              ))}
+              {/* BG Cols (7 Cols) */}
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="absolute h-full border-r border-slate-100 box-border" style={{ left: `${(i + 1) * 4}mm`, width: '0' }}></div>
+              ))}
+
+              {/* Columns & Tasks */}
+              <div className="absolute inset-0 flex">
+                {weekDays.map(day => (
+                  <div key={day.date} className="w-[4mm] relative h-full border-r border-slate-200 box-border">
+                    {day.tasks.map(t => {
+                      const pos = getPosition(new Date(t.startTime), t.duration);
+                      const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc' };
+                      return (
+                        <div key={t.id}
+                          className="absolute left-[0.2mm] right-[0.2mm] rounded-[1px] overflow-hidden flex items-center justify-center border border-white/30"
+                          style={{ top: pos.top, height: pos.height, backgroundColor: cat.color, zIndex: 10 }}
+                        >
+                          <span className="text-white text-[3px] font-bold tracking-tight opacity-90 block"
+                            style={{ writingMode: 'vertical-rl', textOrientation: 'upright', maxHeight: '100%' }}>
+                            {t.name.slice(0, 3)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
