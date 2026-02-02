@@ -38,7 +38,7 @@ const PrintStyles = () => (
         overflow: hidden;
       }
       .print-area {
-        display: block !important;
+        display: flex !important;
         width: 210mm;
         height: 297mm;
         background: white;
@@ -47,13 +47,15 @@ const PrintStyles = () => (
         box-shadow: none !important;
         margin: 0 !important;
         transform: none !important;
-      }
-      /* Flatten the layout for print */
-      .print-layout-row {
-        flex-direction: row !important;
-        display: flex !important;
+        align-items: flex-start;
       }
     }
+    
+    /* Strict Millimeter Sizing Classes */
+    .w-4mm { width: 4mm !important; }
+    .h-4mm { height: 4mm !important; }
+    .w-28mm { width: 28mm !important; }
+    .h-168mm { height: 168mm !important; }
   `}</style>
 );
 
@@ -62,28 +64,19 @@ const formatDuration = (seconds) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-
-  if (h > 0) {
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-  } else {
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }
+  if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-const formatTime = (dateObj) => {
-  return dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
-};
-
+const formatTime = (dateObj) => dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
 const getStartOfWeek = (date) => {
   const d = new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   return new Date(d.setDate(diff));
 };
-
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// 默认分类
 const DEFAULT_CATEGORIES = [
   { id: 'work', name: '工作', color: '#3b82f6' },
   { id: 'study', name: '学习', color: '#10b981' },
@@ -94,228 +87,96 @@ const DEFAULT_CATEGORIES = [
   { id: 'sub', name: '并行/副', color: '#a8a29e' },
 ];
 
-// --- Components ---
-
 const CategoryModal = ({ isOpen, onClose, categories, setCategories, resetCategories }) => {
   if (!isOpen) return null;
   const [editingId, setEditingId] = useState(null);
   const [tempName, setTempName] = useState('');
   const [tempColor, setTempColor] = useState('#000000');
 
-  const handleEdit = (cat) => {
-    setEditingId(cat.id);
-    setTempName(cat.name);
-    setTempColor(cat.color);
-  };
-
-  const handleSave = () => {
-    setCategories(categories.map(c => c.id === editingId ? { ...c, name: tempName, color: tempColor } : c));
-    setEditingId(null);
-  };
-
-  const handleAdd = () => {
-    const newCat = { id: generateId(), name: '新分类', color: '#64748b' };
-    setCategories([...categories, newCat]);
-    handleEdit(newCat);
-  };
-
-  const handleDelete = (id) => {
-    if (categories.length <= 1) return alert("至少保留一个分类");
-    if (confirm("删除此分类？")) {
-      setCategories(categories.filter(c => c.id !== id));
-    }
-  };
+  const handleEdit = (cat) => { setEditingId(cat.id); setTempName(cat.name); setTempColor(cat.color); };
+  const handleSave = () => { setCategories(categories.map(c => c.id === editingId ? { ...c, name: tempName, color: tempColor } : c)); setEditingId(null); };
+  const handleAdd = () => { const newCat = { id: generateId(), name: '新分类', color: '#64748b' }; setCategories([...categories, newCat]); handleEdit(newCat); };
+  const handleDelete = (id) => { if (categories.length <= 1) return alert("保留至少一个"); if (confirm("删除?")) setCategories(categories.filter(c => c.id !== id)); };
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-96 max-h-[80vh] flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-          <h3 className="font-bold text-lg">分类设置</h3>
-          <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl w-80 max-h-[80vh] flex flex-col">
+        <div className="p-3 border-b flex justify-between items-center"><h3 className="font-bold">标签设置</h3><button onClick={onClose}><X size={16} /></button></div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {categories.map(cat => (
-            <div key={cat.id} className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+            <div key={cat.id} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
               {editingId === cat.id ? (
                 <>
-                  <input type="color" value={tempColor} onChange={e => setTempColor(e.target.value)} className="w-8 h-8 rounded-full overflow-hidden border-none cursor-pointer" />
-                  <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded" autoFocus />
-                  <button onClick={handleSave} className="p-1 text-green-500 hover:bg-green-100 rounded"><Check size={16} /></button>
+                  <input type="color" value={tempColor} onChange={e => setTempColor(e.target.value)} className="w-6 h-6 rounded-full border-none" />
+                  <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} className="flex-1 px-1 py-0.5 text-xs border rounded" autoFocus />
+                  <button onClick={handleSave} className="text-green-500"><Check size={14} /></button>
                 </>
               ) : (
                 <>
-                  <span className="w-6 h-6 rounded-full" style={{ backgroundColor: cat.color }}></span>
-                  <span className="flex-1 font-bold text-sm">{cat.name}</span>
-                  <button onClick={() => handleEdit(cat)} className="p-1 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(cat.id)} className="p-1 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                  <span className="w-4 h-4 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                  <span className="flex-1 text-xs font-bold">{cat.name}</span>
+                  <button onClick={() => handleEdit(cat)} className="text-slate-400 hover:text-indigo-500"><Edit2 size={14} /></button>
+                  <button onClick={() => handleDelete(cat.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
                 </>
               )}
             </div>
           ))}
-          <button onClick={handleAdd} className="w-full py-2 flex items-center justify-center gap-2 border border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-indigo-500 transition-colors">
-            <Plus size={16} /> 添加分类
-          </button>
+          <button onClick={handleAdd} className="w-full py-1.5 border border-dashed rounded-lg text-xs hover:bg-slate-50 flex justify-center items-center gap-1"><Plus size={14} /> 新增</button>
         </div>
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30">
-          <button onClick={resetCategories} className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">
-            <RotateCcw size={12} /> 恢复默认
-          </button>
-        </div>
+        <div className="p-2 border-t text-right"><button onClick={resetCategories} className="text-[10px] text-red-400 flex items-center gap-1 ml-auto"><RotateCcw size={10} /> 重置默认</button></div>
       </div>
     </div>
   );
 };
 
-const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) => (
-  <div className="flex gap-2 flex-wrap mb-3">
-    {categories.map(cat => (
-      <button
-        key={cat.id}
-        onClick={() => onSelect(cat.id)}
-        style={{
-          borderColor: selectedId === cat.id ? cat.color : 'transparent',
-          backgroundColor: selectedId === cat.id ? `${cat.color}20` : 'transparent',
-          color: selectedId === cat.id ? cat.color : '#64748b'
-        }}
-        className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
-          ${selectedId !== cat.id ? 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:border-slate-300' : ''}`}
-      >
-        <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: cat.color }}></span>
-        {cat.name}
-      </button>
-    ))}
-    <button
-      onClick={onOpenSettings}
-      className="px-2 py-1 rounded-full text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-    >
-      <Settings size={14} />
-    </button>
-  </div>
-);
-
-const TimerContainer = ({
-  currentTask, taskName, setTaskName, selectedCategoryId, setSelectedCategoryId, categories,
-  startTimer, stopTimer, elapsed,
-  currentSubTask, subTaskName, setSubTaskName, startSubTimer, stopSubTimer, subElapsed,
-  isMiniMode, togglePiP, onOpenSettings
-}) => {
+const TimerContainer = ({ currentTask, taskName, setTaskName, selectedCategoryId, setSelectedCategoryId, categories, startTimer, stopTimer, elapsed, currentSubTask, subTaskName, setSubTaskName, startSubTimer, stopSubTimer, subElapsed, isMiniMode, togglePiP, onOpenSettings }) => {
   const currentCat = currentTask ? categories.find(c => c.id === currentTask.categoryId) : null;
-
   return (
-    <div className={`transition-all duration-300 ${isMiniMode ? 'fixed top-0 left-0 w-full h-full bg-white dark:bg-slate-900 p-2 flex flex-col justify-center overflow-hidden' : ''} no-print`}>
-      {/* Main Timer */}
-      <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-all mb-4 ${isMiniMode ? 'shadow-none border-none p-2 mb-2 rounded-xl' : ''}`}>
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className={`font-bold text-slate-400 uppercase tracking-wider ${isMiniMode ? 'text-[10px]' : 'text-sm'}`}>主任务</h2>
-          <button onClick={togglePiP} className="text-slate-400 hover:text-indigo-500 transition-colors" title="Toggle Floating Window">
-            {isMiniMode ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
-          </button>
+    <div className={`transition-all duration-300 ${isMiniMode ? 'fixed top-0 left-0 w-full h-full bg-white dark:bg-slate-900 p-2 flex flex-col overflow-hidden' : ''} no-print`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-all mb-4 ${isMiniMode ? 'shadow-none border-none p-1 mb-1 rounded-xl flex-1 flex flex-col justify-center' : ''}`}>
+        <div className="flex justify-between items-center mb-2">
+          <h2 className={`font-bold text-slate-400 uppercase tracking-wider ${isMiniMode ? 'hidden' : 'text-sm'}`}>主任务</h2>
+          <button onClick={togglePiP} className="text-slate-400 hover:text-indigo-500 ml-auto" title="PiP">{isMiniMode ? <Maximize2 size={14} /> : <Minimize2 size={16} />}</button>
         </div>
-
         {!currentTask ? (
-          <div className="space-y-4">
-            <div>
-              <input
-                type="text"
-                placeholder="专注内容..."
-                className={`w-full font-medium bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none px-1 py-1 transition-colors placeholder:text-slate-300 font-sans ${isMiniMode ? 'text-lg' : 'text-2xl'}`}
-                value={taskName}
-                onChange={(e) => setTaskName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && startTimer()}
-              />
-            </div>
-            {!isMiniMode && (
-              <CategorySelector
-                categories={categories}
-                selectedId={selectedCategoryId}
-                onSelect={setSelectedCategoryId}
-                onOpenSettings={onOpenSettings}
-              />
-            )}
-            {isMiniMode && (
-              <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
+          <div className={`space-y-4 ${isMiniMode ? 'space-y-2' : ''}`}>
+            <input type="text" placeholder="专注内容..." className={`w-full font-medium bg-transparent border-b-2 focus:border-indigo-500 outline-none px-1 py-1 ${isMiniMode ? 'text-sm border-slate-100' : 'text-2xl border-slate-200'}`} value={taskName} onChange={(e) => setTaskName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && startTimer()} />
+            {!isMiniMode ? (
+              <div className="flex gap-2 flex-wrap mb-3">
                 {categories.map(cat => (
-                  <div key={cat.id}
-                    onClick={() => setSelectedCategoryId(cat.id)}
-                    className={`w-3 h-3 rounded-full cursor-pointer border ${selectedCategoryId === cat.id ? 'ring-2 ring-offset-1 ring-slate-400' : 'border-transparent'}`}
-                    style={{ backgroundColor: cat.color }}
-                    title={cat.name}
-                  />
+                  <button key={cat.id} onClick={() => setSelectedCategoryId(cat.id)} style={{ borderColor: selectedCategoryId === cat.id ? cat.color : 'transparent', backgroundColor: selectedCategoryId === cat.id ? `${cat.color}20` : 'transparent', color: selectedCategoryId === cat.id ? cat.color : '#64748b' }} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${selectedCategoryId !== cat.id ? 'bg-slate-50 border-slate-200' : ''}`}><span className="w-2 h-2 rounded-full inline-block mr-1" style={{ backgroundColor: cat.color }}></span>{cat.name}</button>
                 ))}
+                <button onClick={onOpenSettings} className="px-2 py-1 rounded-full text-xs bg-slate-100 hover:bg-slate-200"><Settings size={14} /></button>
+              </div>
+            ) : (
+              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+                {categories.map(cat => (<div key={cat.id} onClick={() => setSelectedCategoryId(cat.id)} className={`w-3 h-3 flex-shrink-0 rounded-full cursor-pointer border ${selectedCategoryId === cat.id ? 'ring-1 ring-slate-400' : 'border-transparent'}`} style={{ backgroundColor: cat.color }} />))}
               </div>
             )}
-            <button
-              onClick={startTimer}
-              disabled={!taskName.trim()}
-              className={`w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 ${isMiniMode ? 'py-2 text-sm' : 'py-4 text-lg'}`}
-            >
-              <Play fill="currentColor" size={isMiniMode ? 14 : 24} /> {isMiniMode ? '开始' : '开始专注'}
-            </button>
+            <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 ${isMiniMode ? 'py-2 text-sm' : 'py-4 text-lg'}`}><Play fill="currentColor" size={isMiniMode ? 12 : 24} /> {isMiniMode ? 'Go' : '开始专注'}</button>
           </div>
         ) : (
-          <div className="text-center py-2">
-            {!isMiniMode && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-4">
-                <span className="w-2 h-2 rounded-full animate-pulse bg-indigo-500"></span> 专注中
-              </div>
-            )}
-            <h2 className={`font-bold text-slate-800 dark:text-white mb-1 px-4 truncate ${isMiniMode ? 'text-lg' : 'text-3xl'}`}>{currentTask.name}</h2>
-            <div className="text-xs text-slate-400 mb-2 flex items-center justify-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentCat?.color || '#ccc' }}></span>
-              {currentCat?.name || '未知'}
-            </div>
-            <div className={`font-mono font-bold text-slate-800 dark:text-white tracking-tighter mb-4 tabular-nums ${isMiniMode ? 'text-4xl' : 'text-7xl'}`}>
-              {formatDuration(elapsed)}
-            </div>
-            <button
-              onClick={stopTimer}
-              className={`w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded-xl font-bold flex items-center justify-center gap-2 transition-all group ${isMiniMode ? 'py-2 text-sm' : 'py-4 text-lg'}`}
-            >
-              <Square fill="currentColor" size={isMiniMode ? 14 : 20} className="group-hover:scale-110 transition-transform" /> {isMiniMode ? '结束' : '结束任务'}
-            </button>
+          <div className="text-center">
+            <div className={`font-bold text-slate-800 dark:text-white truncate ${isMiniMode ? 'text-base mb-1' : 'text-3xl mb-2'}`}>{currentTask.name}</div>
+            <div className="text-xs text-slate-400 mb-2 flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentCat?.color || '#ccc' }}></span>{currentCat?.name || '未知'}</div>
+            <div className={`font-mono font-bold tracking-tighter tabular-nums ${isMiniMode ? 'text-4xl mb-2' : 'text-7xl mb-6'}`}>{formatDuration(elapsed)}</div>
+            <button onClick={stopTimer} className={`w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-500 rounded-xl font-bold flex items-center justify-center gap-2 group ${isMiniMode ? 'py-1.5 text-xs' : 'py-4 text-lg'}`}><Square fill="currentColor" size={isMiniMode ? 12 : 20} className="group-hover:scale-90" /> {isMiniMode ? 'Stop' : '结束任务'}</button>
           </div>
         )}
       </div>
-
-      {/* Sub Timer */}
-      <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 mb-8 ${isMiniMode ? 'border-none p-2 bg-slate-50 dark:bg-slate-800 mb-0 rounded-xl' : ''}`}>
-        <div className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">副任务</div>
+      <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 ${isMiniMode ? 'border-none p-1 bg-transparent' : ''}`}>
         {!currentSubTask ? (
           <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="并行..."
-              className="flex-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 outline-none focus:border-slate-400"
-              value={subTaskName}
-              onChange={(e) => setSubTaskName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && startSubTimer()}
-            />
-            <button
-              onClick={startSubTimer}
-              disabled={!subTaskName.trim()}
-              className="p-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-            >
-              <Play size={12} fill="currentColor" />
-            </button>
+            <input type="text" placeholder="并行..." className="flex-1 text-xs bg-white dark:bg-slate-800 border rounded-lg px-2 py-1 outline-none" value={subTaskName} onChange={(e) => setSubTaskName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && startSubTimer()} />
+            <button onClick={startSubTimer} className="p-1.5 bg-slate-200 rounded-lg"><Play size={12} fill="currentColor" /></button>
           </div>
         ) : (
-          <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+          <div className="flex items-center justify-between bg-white p-2 rounded-xl border shadow-sm">
             <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                <Layers size={10} className="text-orange-500" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{currentSubTask.name}</div>
-                <div className="text-[10px] font-mono text-slate-500">{formatDuration(subElapsed)}</div>
-              </div>
+              <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0"><Layers size={10} className="text-orange-500" /></div>
+              <div className="min-w-0"><div className="text-xs font-bold truncate">{currentSubTask.name}</div><div className="text-[10px] font-mono text-slate-500">{formatDuration(subElapsed)}</div></div>
             </div>
-            <button
-              onClick={stopSubTimer}
-              className="p-1 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            >
-              <Square size={12} fill="currentColor" />
-            </button>
+            <button onClick={stopSubTimer} className="p-1 text-slate-400 hover:text-red-500"><Square size={12} fill="currentColor" /></button>
           </div>
         )}
       </div>
@@ -329,218 +190,170 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(endOfWeek.getDate() + 6);
 
-  // Custom Notes State (in-memory for now, simple implementation)
-  const [notes, setNotes] = useState("Click to add notes...");
-
-  const hoursMap = [
-    7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-    0,
-    1, 2, 3, 4, 5, 6
-  ];
-
-  const getTopAndHeight = (start, durationSec) => {
-    const getVisualOffset = (d) => {
-      let h = d.getHours();
-      let m = d.getMinutes();
-      if (h >= 7) return (h - 7) * 60 + m;
-      else return (17 + h) * 60 + m;
-    };
-
-    const mapMinutesToCells = (min) => {
-      const threshold = 18 * 60;
-      if (min <= threshold) return min / 30;
-      else return 36 + ((min - threshold) / 60);
-    };
-
-    const startOffset = getVisualOffset(start);
-    const endOffset = startOffset + (durationSec / 60);
-
-    // Explicit 42 Rows Grid alignment
-    // We want to snap to the nearest "sub-grid" if possible, but exact % is fine
-    const startCell = mapMinutesToCells(startOffset);
-    const endCell = mapMinutesToCells(endOffset);
-
-    // Convert to row index (1-based) for CSS Grid if we were using it, 
-    // but here we use absolute %.
-    // Total 42 "units" high.
-
-    const top = (startCell / 42) * 100;
-    const height = ((endCell - startCell) / 42) * 100;
-
-    return { top: `${top}%`, height: `${Math.max(height, 0.5)}%` };
-  };
-
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);
     d.setDate(d.getDate() + i);
     const rangeStart = new Date(d); rangeStart.setHours(7, 0, 0, 0);
     const rangeEnd = new Date(d); rangeEnd.setDate(d.getDate() + 1); rangeEnd.setHours(7, 0, 0, 0);
     const dayTasks = tasks.filter(t => { const tStart = new Date(t.startTime); return tStart >= rangeStart && tStart < rangeEnd; });
-    const totalDuration = dayTasks.reduce((acc, t) => acc + t.duration, 0);
-    return {
-      date: d.toISOString().split('T')[0],
-      dayName: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()],
-      dayNum: d.getDate(),
-      totalDuration,
-      tasks: dayTasks
-    };
+    return { date: d.toISOString().split('T')[0], dayName: ['日', '一', '二', '三', '四', '五', '六'][d.getDay()], dayNum: d.getDate(), tasks: dayTasks, totalDuration: dayTasks.reduce((acc, t) => acc + t.duration, 0) };
   });
 
   const totalWeekDuration = weekDays.reduce((acc, day) => acc + day.totalDuration, 0);
-
-  // calculate category stats for chart
-  const categoryStats = categories.map(cat => {
-    const duration = tasks
-      .filter(t => {
-        const d = new Date(t.startTime);
-        return d >= startOfWeek && d <= endOfWeek;
-      })
-      .filter(t => t.categoryId === cat.id)
-      .reduce((acc, t) => acc + t.duration, 0);
-    return { ...cat, duration };
-  }).filter(c => c.duration > 0);
-
+  const categoryStats = categories.map(cat => ({
+    ...cat, duration: tasks.filter(t => new Date(t.startTime) >= startOfWeek && new Date(t.startTime) <= endOfWeek && t.categoryId === cat.id).reduce((acc, t) => acc + t.duration, 0)
+  })).filter(c => c.duration > 0);
   const maxCatDuration = Math.max(...categoryStats.map(c => c.duration), 1);
 
-  return (
-    <div className="print-area w-full bg-white text-slate-900 mx-auto shadow-md my-8 transform scale-90 origin-top flex print-layout-row">
-      {/* LEFT COLUMN: TIMELINE AXIS */}
-      <div className="w-10 flex-shrink-0 flex flex-col pt-[15mm] border-r border-slate-300">
-        <div className="flex-1 relative">
-          {hoursMap.map((h, idx) => {
-            let topCell = idx < 18 ? idx * 2 : 36 + (idx - 18);
-            const topPct = (topCell / 42) * 100;
-            const heightPct = idx < 18 ? (2 / 42) * 100 : (1 / 42) * 100;
+  // Position Helpers (Strict 4mm)
+  // Rows 0-17 (7am-0am) -> 2 cells/hr
+  // Rows 18-41 (0am-7am) -> ? User said 7am-1am=36cells, 1am-7am=6cells. 
+  // 7am-1am (18 hours) * 2 = 36 cells.
+  // 1am-7am (6 hours) * 1 = 6 cells.
+  // Total 42 cells. Each cell 4mm.
+  const getPosition = (start, durationSec) => {
+    let h = start.getHours();
+    let m = start.getMinutes();
+    // Normalize to minutes from 07:00
+    let minsFrom7 = (h >= 7) ? (h - 7) * 60 + m : (17 + h) * 60 + m;
 
+    const mapMinsToCells = (min) => {
+      if (min <= 18 * 60) return min / 30; // 2 cells/hr
+      return 36 + (min - 18 * 60) / 60; // 1 cell/hr
+    };
+
+    const startCell = mapMinsToCells(minsFrom7);
+    const endCell = mapMinsToCells(minsFrom7 + durationSec / 60);
+
+    // Top px = startCell * 4mm
+    // Height px = (endCell - startCell) * 4mm
+    return { top: `${startCell * 4}mm`, height: `${Math.max((endCell - startCell) * 4, 2)}mm` };
+  };
+
+  return (
+    <div className="print-area flex flex-row">
+      {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
+      <div className="flex-shrink-0 flex pt-[10mm] border-r border-slate-300 mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
+        {/* Axis */}
+        <div className="w-8 flex-shrink-0 flex flex-col relative h-[168mm] mr-1">
+          {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
+            // Y position in cells
+            let cellY = i < 18 ? i * 2 : 36 + (i - 18);
             return (
-              <div key={idx} className="absolute w-full text-right pr-1 border-t border-slate-200"
-                style={{ top: `${topPct}%`, height: `${heightPct}%` }}>
-                <span className="text-[8px] text-slate-400 font-mono -translate-y-1/2 block leading-none">{h}</span>
+              <div key={i} className="absolute w-full text-right text-[8px] text-slate-400 font-mono leading-none border-t border-slate-200 pr-1"
+                style={{ top: `${cellY * 4}mm`, height: i < 18 ? '8mm' : '4mm' }}>
+                <span className="-translate-y-1/2 block">{h}</span>
               </div>
             )
           })}
         </div>
+
+        {/* The 28mm Strip */}
+        <div className="flex flex-col w-[28mm]">
+          {/* Header */}
+          <div className="flex h-[10mm] border-b border-black items-end pb-1 mb-[1px]">
+            {weekDays.map(day => (
+              <div key={day.date} className="w-[4mm] text-center flex flex-col justify-end">
+                <div className="text-[6px] text-slate-500 uppercase leading-none scale-75">{day.dayName}</div>
+                <div className="font-bold text-[8px] leading-none">{day.dayNum}</div>
+              </div>
+            ))}
+          </div>
+          {/* Grid */}
+          <div className="relative w-[28mm] h-[168mm] border-t border-slate-200">
+            {/* BG Grid Lines (42 Rows) */}
+            {Array.from({ length: 42 }).map((_, i) => (
+              <div key={i} className="absolute w-full border-b border-slate-100 box-border" style={{ top: `${(i + 1) * 4}mm`, height: '0' }}></div>
+            ))}
+            {/* BG Cols (7 Cols) */}
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="absolute h-full border-r border-slate-100 box-border" style={{ left: `${(i + 1) * 4}mm`, width: '0' }}></div>
+            ))}
+
+            {/* Columns & Tasks */}
+            <div className="absolute inset-0 flex">
+              {weekDays.map(day => (
+                <div key={day.date} className="w-[4mm] relative h-full border-r border-slate-200 box-border">
+                  {day.tasks.map(t => {
+                    const pos = getPosition(new Date(t.startTime), t.duration);
+                    const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc' };
+                    return (
+                      <div key={t.id}
+                        className="absolute left-[0.2mm] right-[0.2mm] rounded-[1px] overflow-hidden flex items-center justify-center border border-white/30"
+                        style={{ top: pos.top, height: pos.height, backgroundColor: cat.color, zIndex: 10 }}
+                      >
+                        <span className="text-white text-[3px] font-bold tracking-tight opacity-90 block"
+                          style={{ writingMode: 'vertical-rl', textOrientation: 'upright', maxHeight: '100%' }}>
+                          {t.name.slice(0, 3)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* CENTER: DAYS COLUMNS */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="h-[15mm] flex border-b border-black items-end pb-1 ml-[1px]">
-          {weekDays.map(day => (
-            <div key={day.date} className="flex-1 text-center">
-              <div className="text-[8px] text-slate-500 uppercase font-bold tracking-wider">{day.dayName}</div>
-              <div className="font-bold text-base leading-none">{day.dayNum}</div>
-            </div>
-          ))}
+      {/* --- RIGHT: DASHBOARD (Fills remaining space) --- */}
+      <div className="flex-1 flex flex-col pt-[10mm] pr-[10mm] h-full">
+        {/* Top Header */}
+        <div className="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-6">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-800">{startOfWeek.getFullYear()}</h1>
+            <div className="text-sm text-slate-500 font-mono tracking-widest uppercase">Weekly Report</div>
+          </div>
+          <div className="text-right">
+            <div className="text-xl font-bold">{startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}</div>
+            <div className="text-xs text-slate-400">Total Focus: {formatDuration(totalWeekDuration)}</div>
+          </div>
         </div>
 
-        {/* Grid Content */}
-        <div className="flex-1 flex relative">
-          {/* EXPLICIT GRID BACKGROUND */}
-          <div className="absolute inset-0 flex flex-col pointer-events-none z-0">
-            {/* Rows: 42 of them */}
-            {Array.from({ length: 42 }).map((_, i) => (
-              <div key={`row-${i}`} className="flex-1 border-b border-slate-100 w-full box-border"></div>
-            ))}
-          </div>
-          <div className="absolute inset-0 flex pointer-events-none z-0">
-            {/* Cols: 7 of them */}
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={`col-${i}`} className="flex-1 border-r border-slate-100 h-full box-border"></div>
-            ))}
-          </div>
-
-          {/* Day Columns & Tasks */}
-          {weekDays.map(day => (
-            <div key={day.date} className="flex-1 border-r border-slate-200 relative h-full z-10" style={{ boxSizing: 'border-box' }}>
-              {day.tasks.map(t => {
-                const pos = getTopAndHeight(new Date(t.startTime), t.duration);
-                const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc' };
-
+        {/* Canvas Area split into Stats and Memo */}
+        <div className="flex-1 flex flex-col gap-6">
+          {/* Visual Stats Chart */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 print:border-slate-200">
+            <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><BarChart2 size={16} /> CATEGORY BREAKDOWN</h3>
+            <div className="flex gap-4 items-end h-[40mm]">
+              {categoryStats.map(cat => {
+                const hPct = (cat.duration / maxCatDuration) * 100;
                 return (
-                  <div key={t.id}
-                    className="absolute left-0.5 right-0.5 rounded-[1px] overflow-hidden flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.1)] print:shadow-none select-none border border-white/20 print:border-black/10"
-                    style={{
-                      top: pos.top,
-                      height: pos.height,
-                      backgroundColor: cat.color,
-                      zIndex: 10
-                    }}
-                  >
-                    <span className="text-white text-[8px] print:text-[6px] font-bold leading-none tracking-tight mix-blend-plus-lighter print:hidden"
-                      style={{
-                        writingMode: 'vertical-rl',
-                        textOrientation: 'upright',
-                        maxHeight: '95%'
-                      }}>
-                      {t.name}
-                    </span>
-                    {/* Print Optimized Text */}
-                    <span className="hidden print:block text-white print:text-[6px] font-bold leading-none text-center transform scale-90"
-                      style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>
-                      {t.name.slice(0, 4)}
-                    </span>
+                  <div key={cat.id} className="flex-1 flex flex-col items-center gap-1 group">
+                    <div className="text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity mb-auto">{formatDuration(cat.duration)}</div>
+                    <div className="w-full bg-slate-200 rounded-t-sm relative overflow-hidden transition-all hover:brightness-95" style={{ height: `${Math.max(hPct, 2)}%` }}>
+                      <div className="absolute inset-0 opacity-80" style={{ backgroundColor: cat.color }}></div>
+                    </div>
+                    <div className="text-[10px] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center text-slate-500 font-medium">{cat.name}</div>
                   </div>
                 )
               })}
+              {categoryStats.length === 0 && <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No data recorded</div>}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* RIGHT: VIZ & STATS */}
-      <div className="w-[50mm] flex-shrink-0 border-l border-slate-300 flex flex-col p-3 bg-slate-50 print:bg-white">
-        <div className="mb-4">
-          <h2 className="font-bold text-2xl">{startOfWeek.getFullYear()}</h2>
-          <div className="text-[10px] text-slate-500 mt-1">{startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}</div>
-        </div>
-
-        {/* VISUAL STATS (Bar Chart) */}
-        <div className="mb-6">
-          <h3 className="font-bold text-xs border-b border-black mb-3 pb-1 flex justify-between">
-            <span>STATS</span>
-            <span className="font-mono">{formatDuration(totalWeekDuration)}</span>
-          </h3>
-          <div className="space-y-2">
-            {categoryStats.map(cat => {
-              const pct = (cat.duration / maxCatDuration) * 100;
-              return (
-                <div key={cat.id} className="flex items-center gap-2 text-[10px]">
-                  <div className="w-12 text-right truncate text-slate-500">{cat.name}</div>
-                  <div className="flex-1 h-3 bg-slate-100 rounded-sm overflow-hidden relative">
-                    <div className="absolute top-0 left-0 h-full rounded-sm min-w-[2px]"
-                      style={{ width: `${pct}%`, backgroundColor: cat.color }}></div>
-                  </div>
-                  <div className="w-10 font-mono text-right opacity-70">{formatDuration(cat.duration)}</div>
-                </div>
-              )
-            })}
-            {categoryStats.length === 0 && <div className="text-[10px] text-slate-400 italic">No data yet</div>}
           </div>
-        </div>
 
-        {/* CUSTOMIZABLE MEMO */}
-        <div className="flex-1 flex flex-col">
-          <h3 className="font-bold text-xs border-b border-black mb-2 pb-1">MEMO / ANALYSIS</h3>
-          <div
-            className="flex-1 bg-white border border-slate-200 rounded p-2 text-[10px] leading-relaxed outline-none focus:ring-1 focus:ring-slate-300 text-slate-600 resize-none whitespace-pre-wrap font-sans grid-pattern-4mm"
-            contentEditable
-            suppressContentEditableWarning
-          >
-            Notes...
+          {/* Memo Area */}
+          <div className="flex-1 flex flex-col">
+            <h3 className="font-bold text-sm mb-2 flex items-center gap-2 text-slate-400">MEMO & ANALYSIS</h3>
+            <div
+              className="flex-1 border border-slate-200 rounded-xl p-4 text-xs leading-relaxed outline-none focus:ring-1 focus:ring-slate-300 text-slate-700 resize-none font-sans grid-pattern-4mm bg-white"
+              contentEditable
+              suppressContentEditableWarning
+            >
+              Write your weekly review here...
+            </div>
           </div>
-        </div>
 
-        {/* 4mm Grid Ref */}
-        <div className="mt-4 pt-2 border-t border-slate-200 flex justify-between items-end">
-          <div className="text-[8px] text-slate-300">4mm Grid Ref</div>
-          <div className="w-8 h-8 border border-slate-300 grid-pattern-4mm"></div>
+          {/* Footer */}
+          <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100 text-[10px] text-slate-300">
+            <div>TimeFlow Weeks • Generated Report</div>
+            <div className="font-mono">4mm Grid System v5.0</div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 export default function App() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
@@ -573,50 +386,26 @@ export default function App() {
   useEffect(() => { if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask)); else localStorage.removeItem('timeflow_current'); }, [currentTask]);
   useEffect(() => { if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask)); else localStorage.removeItem('timeflow_sub_current'); }, [currentSubTask]);
 
-  useEffect(() => {
-    if (currentTask) {
-      const calc = () => setElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentTask.startTime).getTime()) / 1000)));
-      calc(); timerRef.current = setInterval(calc, 1000);
-    } else { clearInterval(timerRef.current); setElapsed(0); }
-    return () => clearInterval(timerRef.current);
-  }, [currentTask]);
-
-  useEffect(() => {
-    if (currentSubTask) {
-      const calc = () => setSubElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentSubTask.startTime).getTime()) / 1000)));
-      calc(); subTimerRef.current = setInterval(calc, 1000);
-    } else { clearInterval(subTimerRef.current); setSubElapsed(0); }
-    return () => clearInterval(subTimerRef.current);
-  }, [currentSubTask]);
+  useEffect(() => { if (currentTask) { const calc = () => setElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentTask.startTime).getTime()) / 1000))); calc(); timerRef.current = setInterval(calc, 1000); } else { clearInterval(timerRef.current); setElapsed(0); } return () => clearInterval(timerRef.current); }, [currentTask]);
+  useEffect(() => { if (currentSubTask) { const calc = () => setSubElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentSubTask.startTime).getTime()) / 1000))); calc(); subTimerRef.current = setInterval(calc, 1000); } else { clearInterval(subTimerRef.current); setSubElapsed(0); } return () => clearInterval(subTimerRef.current); }, [currentSubTask]);
 
   const startTimer = () => { if (!taskName.trim()) return; setCurrentTask({ id: generateId(), name: taskName, startTime: new Date().toISOString(), duration: 0, categoryId: selectedCategoryId }); };
   const stopTimer = () => { if (!currentTask) return; setTasks([{ ...currentTask, endTime: new Date().toISOString(), duration: elapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentTask(null); setTaskName(''); setElapsed(0); };
   const startSubTimer = () => { if (!subTaskName.trim()) return; setCurrentSubTask({ id: generateId(), name: subTaskName, startTime: new Date().toISOString(), duration: 0, categoryId: (categories.find(c => c.id === 'sub') || categories[0]).id }); };
   const stopSubTimer = () => { if (!currentSubTask) return; setTasks([{ ...currentSubTask, endTime: new Date().toISOString(), duration: subElapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentSubTask(null); setSubTaskName(''); setSubElapsed(0); };
-  const deleteTask = (id) => { if (confirm('Del?')) setTasks(tasks.filter(t => t.id !== id)); };
 
   const togglePiP = async () => {
     if (pipWindowRef.current) { pipWindowRef.current.close(); return; }
     if (!window.documentPictureInPicture) { setIsMiniMode(!isMiniMode); return; }
     try {
-      const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 300, height: 400 });
+      const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 280, height: 360 });
       pipWindowRef.current = pipWindow;
       setIsMiniMode(true);
-      Array.from(document.styleSheets).forEach(s => {
-        try {
-          if (s.href) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = s.href; pipWindow.document.head.appendChild(l); }
-          else if (s.cssRules) { const st = document.createElement('style'); st.textContent = [...s.cssRules].map(r => r.cssText).join(''); pipWindow.document.head.appendChild(st); }
-        } catch (e) { }
-      });
+      Array.from(document.styleSheets).forEach(s => { try { if (s.href) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = s.href; pipWindow.document.head.appendChild(l); } else if (s.cssRules) { const st = document.createElement('style'); st.textContent = [...s.cssRules].map(r => r.cssText).join(''); pipWindow.document.head.appendChild(st); } } catch (e) { } });
       const c = document.getElementById('unified-timer-container');
       if (c) pipWindow.document.body.appendChild(c);
-      pipWindow.addEventListener('pagehide', () => {
-        const r = document.getElementById('unified-timer-root');
-        if (r && c) r.appendChild(c);
-        pipWindowRef.current = null;
-        setIsMiniMode(false);
-      });
-    } catch (e) { console.error(e); alert("PiP Error"); }
+      pipWindow.addEventListener('pagehide', () => { const r = document.getElementById('unified-timer-root'); if (r && c) r.appendChild(c); pipWindowRef.current = null; setIsMiniMode(false); });
+    } catch (e) { console.error(e); }
   };
 
   return (
@@ -624,55 +413,21 @@ export default function App() {
       <PrintStyles />
       <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} setCategories={setCategories} resetCategories={() => setCategories(DEFAULT_CATEGORIES)} />
 
-      {/* NO PRINT HEADER */}
+      {/* NO PRINT UI */}
       <div className="no-print pt-6 px-6 mb-4 flex justify-between items-center max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">TimeFlow Weeks</h1>
         <div className="flex gap-2">
-          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm" onClick={() => window.print()}><Printer size={20} className="text-slate-600 dark:text-slate-300" /></button>
-          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm" onClick={() => setIsCategoryModalOpen(true)}><Settings size={20} className="text-slate-600 dark:text-slate-300" /></button>
+          <button className="p-2 rounded-full hover:bg-white shadow-sm" onClick={() => window.print()}><Printer size={20} className="text-slate-600" /></button>
+          <button className="p-2 rounded-full hover:bg-white shadow-sm" onClick={() => setIsCategoryModalOpen(true)}><Settings size={20} className="text-slate-600" /></button>
         </div>
       </div>
-
       <div className="container mx-auto px-4 max-w-xl relative no-print">
-        <div id="unified-timer-root">
-          <div id="unified-timer-container">
-            <TimerContainer
-              currentTask={currentTask} taskName={taskName} setTaskName={setTaskName} selectedCategoryId={selectedCategoryId} setSelectedCategoryId={setSelectedCategoryId} categories={categories} startTimer={startTimer} stopTimer={stopTimer} elapsed={elapsed}
-              currentSubTask={currentSubTask} subTaskName={subTaskName} setSubTaskName={setSubTaskName} startSubTimer={startSubTimer} stopSubTimer={stopSubTimer} subElapsed={subElapsed}
-              isMiniMode={isMiniMode} togglePiP={togglePiP} onOpenSettings={() => setIsCategoryModalOpen(true)}
-            />
-          </div>
-        </div>
-
-        {/* Task List (No Print) */}
-        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate() - 1); setViewDate(d.toISOString().split('T')[0]) }}><ChevronLeft /></button>
-            <div className="font-bold flex gap-2 items-center"><Calendar size={18} /> {viewDate}</div>
-            <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate() + 1); setViewDate(d.toISOString().split('T')[0]) }}><ChevronRight /></button>
-          </div>
-          <div className="space-y-2">
-            {tasks.filter(t => t.date === viewDate).length === 0 && <div className="text-center text-slate-400 py-4">No tasks</div>}
-            {tasks.filter(t => t.date === viewDate).map(t => (
-              <div key={t.id} className="flex justify-between p-3 hover:bg-slate-50 border rounded-xl border-transparent hover:border-slate-100">
-                <div className="flex gap-3 items-center">
-                  <div className="w-1 h-8 rounded-full" style={{ backgroundColor: (categories.find(c => c.id === t.categoryId) || {}).color }}></div>
-                  <div><div className="font-bold">{t.name}</div><div className="text-xs text-slate-400">{formatTime(new Date(t.startTime))}</div></div>
-                </div>
-                <div className="flex gap-4 items-center">
-                  <div className="font-mono font-bold">{formatDuration(t.duration)}</div>
-                  <button onClick={() => deleteTask(t.id)}><Trash2 size={16} className="text-slate-300 hover:text-red-500" /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div id="unified-timer-root"><div id="unified-timer-container"><TimerContainer currentTask={currentTask} taskName={taskName} setTaskName={setTaskName} selectedCategoryId={selectedCategoryId} setSelectedCategoryId={setSelectedCategoryId} categories={categories} startTimer={startTimer} stopTimer={stopTimer} elapsed={elapsed} currentSubTask={currentSubTask} subTaskName={subTaskName} setSubTaskName={setSubTaskName} startSubTimer={startSubTimer} stopSubTimer={stopSubTimer} subElapsed={subElapsed} isMiniMode={isMiniMode} togglePiP={togglePiP} onOpenSettings={() => setIsCategoryModalOpen(true)} /></div></div>
       </div>
 
-      {/* TIMELINE (PRINT ROOT) */}
+      {/* PRINT ROOT - Enforce Flex Layout */}
       <div id="print-root">
-        <div className="container mx-auto px-4 max-w-4xl pb-10">
-          <h2 className="text-xl font-bold mb-4 px-4 text-slate-500 no-print">Weekly Overview</h2>
+        <div className="print-area">
           <WeeksLayout viewDate={viewDate} tasks={tasks} categories={categories} />
         </div>
       </div>
