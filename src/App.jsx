@@ -235,7 +235,7 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
       {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
       <div className="flex-shrink-0 flex pt-[10mm] border-r border-slate-300 mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
         {/* Axis */}
-        <div className="w-8 flex-shrink-0 flex flex-col relative h-[168mm] mr-1">
+        <div className="w-8 flex-shrink-0 flex flex-col relative h-[168mm] mr-1" style={{ marginTop: 'calc(10mm + 1px)' }}>
           {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
             // Y position in cells
             let cellY = i < 18 ? i * 2 : 36 + (i - 18);
