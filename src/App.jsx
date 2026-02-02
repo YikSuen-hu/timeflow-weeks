@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Play, Square, Maximize2, Minimize2, Printer, Trash2, 
-  Clock, ChevronRight, ChevronLeft, CheckCircle, Plus, 
+import {
+  Play, Square, Maximize2, Minimize2, Printer, Trash2,
+  Clock, ChevronRight, ChevronLeft, CheckCircle, Plus,
   Edit2, X, Save, Settings, RotateCcw, Layers, Zap, Calendar, Layout, Eye, EyeOff
 } from 'lucide-react';
 
@@ -65,7 +65,7 @@ const formatFullTime = (dateObj) => {
 const getStartOfWeek = (date) => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   return new Date(d.setDate(diff));
 };
 
@@ -73,10 +73,10 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // 默认分类
 const DEFAULT_CATEGORIES = [
-  { id: 'work', name: '工作', color: '#3b82f6' }, 
+  { id: 'work', name: '工作', color: '#3b82f6' },
   { id: 'study', name: '学习', color: '#10b981' },
   { id: 'life', name: '生活', color: '#f59e0b' },
-  { id: 'rest', name: '休息', color: '#8b5cf6' }, 
+  { id: 'rest', name: '休息', color: '#8b5cf6' },
   { id: 'sport', name: '运动', color: '#ef4444' },
   { id: 'other', name: '其他', color: '#64748b' },
   { id: 'sub', name: '并行/副', color: '#a8a29e' },
@@ -87,9 +87,9 @@ export default function App() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [tasks, setTasks] = useState([]); // Actual tasks
   const [plans, setPlans] = useState([]); // Planned tasks
-  
+
   // Main Task State
-  const [currentTask, setCurrentTask] = useState(null); 
+  const [currentTask, setCurrentTask] = useState(null);
   const [taskName, setTaskName] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORIES[0].id);
 
@@ -100,13 +100,13 @@ export default function App() {
 
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]); 
+  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   // Modal States
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  
+
   const [manualForm, setManualForm] = useState({
     name: '',
     date: new Date().toISOString().split('T')[0],
@@ -131,13 +131,13 @@ export default function App() {
   useEffect(() => {
     const savedCategories = localStorage.getItem('timeflow_categories');
     if (savedCategories) setCategories(JSON.parse(savedCategories));
-    
+
     const savedTasks = localStorage.getItem('timeflow_tasks');
     if (savedTasks) setTasks(JSON.parse(savedTasks));
 
     const savedPlans = localStorage.getItem('timeflow_plans');
     if (savedPlans) setPlans(JSON.parse(savedPlans));
-    
+
     // Restore Main Task
     const savedCurrent = localStorage.getItem('timeflow_current');
     if (savedCurrent) {
@@ -159,7 +159,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('timeflow_tasks', JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => { localStorage.setItem('timeflow_plans', JSON.stringify(plans)); }, [plans]);
   useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
-  
+
   useEffect(() => {
     if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask));
     else localStorage.removeItem('timeflow_current');
@@ -244,7 +244,7 @@ export default function App() {
   const startSubTimer = () => {
     if (!subTaskName.trim()) return;
     const subCat = categories.find(c => c.id === 'sub') || categories[categories.length - 1];
-    
+
     const newSubTask = {
       id: generateId(),
       name: subTaskName,
@@ -335,7 +335,7 @@ export default function App() {
     } else {
       setTasks([newTask, ...tasks]);
     }
-    
+
     setIsManualModalOpen(false);
   };
 
@@ -358,7 +358,7 @@ export default function App() {
           {cat.name}
         </button>
       ))}
-      <button 
+      <button
         onClick={() => setIsCategoryModalOpen(true)}
         className="px-2 py-1 rounded-full text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       >
@@ -370,47 +370,299 @@ export default function App() {
   const TimerInterface = () => {
     const currentCat = currentTask ? getCategory(currentTask.categoryId) : null;
     return (
-      <div className={`transition-all duration-300 ease-in-out bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col
-        ${isMiniMode 
-          ? 'fixed bottom-6 right-6 w-80 rounded-2xl z-50' 
-          : 'relative w-full max-w-lg mx-auto rounded-3xl mb-8'
+      <div className={`transition-all duration-300 ease-in-out bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col mb-8
+        ${isMiniMode
+          ? 'fixed bottom-6 right-6 w-80 rounded-2xl z-50'
+          : 'relative w-full max-w-xl mx-auto rounded-3xl'
         } no-print`}>
-        
+
         {/* Header */}
-        <div className={`flex justify-between items-start border-b border-slate-100 dark:border-slate-700 ${isMiniMode ? 'p-3 bg-white dark:bg-slate-800' : 'p-4'}`}>
-          <div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-indigo-600" />
-              <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">北京时间</span>
+        <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700 ${isMiniMode ? 'p-3 bg-white dark:bg-slate-800' : 'p-4'}`}>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+              <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <div className="font-mono text-xl text-slate-900 dark:text-white font-bold leading-none mt-1">
-              {formatFullTime(currentTime)}
+            <div>
+              <div className="font-mono text-xl font-bold text-slate-800 dark:text-slate-100 leading-none">
+                {formatFullTime(currentTime)}
+              </div>
+              <div className="text-xs text-slate-400 font-medium mt-0.5">TimeFlow Weeks</div>
             </div>
           </div>
-          <button onClick={() => setIsMiniMode(!isMiniMode)} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500">
-            {isMiniMode ? <Maximize2 size={16} /> : <Minimize2 size={18} />}
+          <button onClick={() => setIsMiniMode(!isMiniMode)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+            {isMiniMode ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
           </button>
         </div>
 
-        {/* --- SECTION 1: MAIN TASK (Larger Area) --- */}
-        <div className={`flex-1 ${isMiniMode ? 'p-4' : 'p-6 pb-8'}`}>
-          <div className="text-center mb-6 relative group">
-            <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all ${isMiniMode ? 'text-5xl' : 'text-7xl tracking-tighter'}`}>
-              {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
-              <span className="text-sm font-normal text-slate-400 ml-1">{currentCat ? currentCat.name : ''}</span>
+        {/* --- SECTION 1: MAIN TASK --- */}
+        <div className={`flex-1 ${isMiniMode ? 'p-4' : 'p-6'}`}>
+          {!currentTask ? (
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="准备专注于什么？"
+                  className="w-full text-lg font-medium bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none px-1 py-2 transition-colors placeholder:text-slate-300"
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && startTimer()}
+                  autoFocus
+                />
+              </div>
+              <CategorySelector selectedId={selectedCategoryId} onSelect={setSelectedCategoryId} />
+              <button
+                onClick={startTimer}
+                disabled={!taskName.trim()}
+                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
+              >
+                <Play fill="currentColor" size={20} /> 开始专注
+              </button>
+            </div>
+          ) : (
+            <div className="text-center py-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-4">
+                <span className="w-2 h-2 rounded-full animate-pulse bg-indigo-500"></span>
+                专注中
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-1 px-4 truncate">{currentTask.name}</h2>
+              <div className="text-sm text-slate-400 mb-6 flex items-center justify-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCat.color }}></span>
+                {currentCat.name}
+              </div>
+
+              <div className="font-mono font-bold text-slate-800 dark:text-white text-6xl tracking-tighter mb-8 tabular-nums">
+                {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
+              </div>
+
+              <button
+                onClick={stopTimer}
+                className="w-full py-3.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all group"
+              >
+                <Square fill="currentColor" size={18} className="group-hover:scale-110 transition-transform" /> 结束任务
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* --- SECTION 2: SUB TASK (Parallel) --- */}
+        <div className={`border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 ${isMiniMode ? 'p-3' : 'p-4'}`}>
+          {!currentSubTask ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="并行任务 (如: 听音乐)"
+                className="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-slate-400"
+                value={subTaskName}
+                onChange={(e) => setSubTaskName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && startSubTimer()}
+              />
+              <button
+                onClick={startSubTimer}
+                disabled={!subTaskName.trim()}
+                className="p-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              >
+                <Play size={16} fill="currentColor" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                  <Layers size={14} className="text-orange-500" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{currentSubTask.name}</div>
+                  <div className="text-xs font-mono text-slate-500">{formatDuration(subElapsed)}</div>
+                </div>
+              </div>
+              <button
+                onClick={stopSubTimer}
+                className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <Square size={16} fill="currentColor" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const WeeksLayout = () => {
+    // Filter tasks for the selected week
+    const currentDate = new Date(viewDate);
+    const startOfWeek = getStartOfWeek(currentDate);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+    // Generate 7 days
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(startOfWeek);
+      d.setDate(d.getDate() + i);
+      return {
+        date: d.toISOString().split('T')[0],
+        dayName: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()],
+        dayNum: d.getDate()
+      };
+    });
+
+    return (
+      <div className="print-area hidden w-full h-full bg-white text-slate-900">
+        {/* LEFT PAGE: TIMELINE */}
+        <div className="w-[100mm] flex flex-col h-[270mm] print-chart-container relative">
+          <div className="text-center border-b-2 border-slate-800 pb-2 mb-2">
+            <h2 className="text-xl font-bold tracking-widest">{startOfWeek.getFullYear()} REPORT</h2>
+            <div className="text-xs text-slate-500">
+              {startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}
             </div>
           </div>
+
+          {/* Days Columns */}
+          <div className="flex-1 flex border-l border-slate-200">
+            <div className="w-8 flex-shrink-0 flex flex-col text-[8px] text-slate-400 border-r border-slate-200 pt-8">
+              {Array.from({ length: 24 }).map((_, i) => (
+                <div key={i} className="flex-1 text-right pr-1 border-b border-dashed border-slate-100 relative">
+                  <span className="absolute -top-1.5 right-1">{i}</span>
+                </div>
+              ))}
+            </div>
+            {weekDays.map(day => (
+              <div key={day.date} className="flex-1 border-r border-slate-200 relative group">
+                <div className="text-center border-b border-slate-200 py-1 bg-slate-50">
+                  <div className="text-[10px] scale-90 text-slate-500">{day.dayName}</div>
+                  <div className="font-bold text-sm">{day.dayNum}</div>
+                </div>
+
+                {/* Render Tasks Blocks */}
+                <div className="relative h-full w-full">
+                  {tasks.filter(t => t.date === day.date).map(t => {
+                    const start = new Date(t.startTime);
+                    const end = new Date(t.endTime);
+                    const startMin = start.getHours() * 60 + start.getMinutes();
+                    const durationMin = t.duration / 60;
+                    const topPct = (startMin / 1440) * 100;
+                    const heightPct = (durationMin / 1440) * 100;
+                    const cat = getCategory(t.categoryId);
+
+                    return (
+                      <div key={t.id}
+                        className="absolute left-0.5 right-0.5 rounded-sm overflow-hidden text-[8px] leading-tight flex items-center justify-center text-white/90"
+                        style={{
+                          top: `${topPct}%`,
+                          height: `${Math.max(heightPct, 1)}%`,
+                          backgroundColor: cat.color,
+                          zIndex: 1
+                        }}
+                        title={`${t.name} (${formatDuration(t.duration)})`}
+                      >
+                        {heightPct > 2 && <span className="truncate px-0.5">{t.name}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT PAGE: GRID NOTE */}
+        <div className="w-[85mm] h-[270mm] border border-slate-200 grid-pattern-4mm p-4 relative">
+          <div className="absolute top-4 right-4 text-slate-400 font-mono text-sm opacity-50">MEMO</div>
+          {/* This area is for hand-written notes */}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-colors pb-20">
       <PrintStyles />
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">TimeFlow Weeks Manager</h1>
+
+      {/* --- PAGE HEADER --- */}
+      <div className="no-print pt-6 px-6 mb-4 flex justify-between items-center max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          TimeFlow <span className="font-light text-slate-400 text-lg">Weeks</span>
+        </h1>
+        <div className="flex gap-2">
+          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all" onClick={() => window.print()}>
+            <Printer size={20} className="text-slate-600 dark:text-slate-300" />
+          </button>
+          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all">
+            <Settings size={20} className="text-slate-600 dark:text-slate-300" />
+          </button>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 max-w-4xl relative">
         <TimerInterface />
+
+        {/* --- TASK LIST SECTION --- */}
+        <div className="no-print bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <button onClick={() => {
+                const d = new Date(viewDate); d.setDate(d.getDate() - 1);
+                setViewDate(d.toISOString().split('T')[0]);
+              }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><ChevronLeft /></button>
+
+              <div className="text-lg font-bold flex items-center gap-2">
+                <Calendar size={18} className="text-indigo-500" />
+                {viewDate}
+                {viewDate === new Date().toISOString().split('T')[0] && <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">Today</span>}
+              </div>
+
+              <button onClick={() => {
+                const d = new Date(viewDate); d.setDate(d.getDate() + 1);
+                setViewDate(d.toISOString().split('T')[0]);
+              }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><ChevronRight /></button>
+            </div>
+
+            <div className="text-sm text-slate-400">
+              共 {tasks.filter(t => t.date === viewDate).length} 项
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {tasks.filter(t => t.date === viewDate).length === 0 ? (
+              <div className="text-center py-10 text-slate-400">
+                <div className="mb-2">☕</div>
+                还没有记录，开始第一个任务吧
+              </div>
+            ) : (
+              tasks.filter(t => t.date === viewDate)
+                .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+                .map(t => {
+                  const cat = getCategory(t.categoryId);
+                  return (
+                    <div key={t.id} className="group flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-1 h-8 rounded-full`} style={{ backgroundColor: cat.color }}></div>
+                        <div>
+                          <div className="font-bold text-slate-700 dark:text-slate-200">{t.name}</div>
+                          <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700">{cat.name}</span>
+                            <span className="font-mono">{formatTime(new Date(t.startTime))} - {formatTime(new Date(t.endTime))}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="font-mono font-bold text-lg text-slate-700 dark:text-slate-300">
+                          {formatDuration(t.duration)}
+                        </div>
+                        <button onClick={() => deleteTask(t.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+            )}
+          </div>
+        </div>
+
+        {/* --- WEEKS PRINT LAYOUT (Hidden unless printing) --- */}
+        <WeeksLayout />
+
       </div>
     </div>
   );
