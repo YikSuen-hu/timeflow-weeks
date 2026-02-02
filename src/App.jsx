@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Play, Square, Maximize2, Minimize2, Printer, Trash2,
   Clock, ChevronRight, ChevronLeft, Calendar, Layers, Settings,
-  Plus, X, Save, RotateCcw, Edit2, Check
+  Plus, X, Save, RotateCcw, Edit2, Check, BarChart2
 } from 'lucide-react';
 
 // --- CSS for Print & Grid ---
@@ -23,6 +23,20 @@ const PrintStyles = () => (
       .no-print {
         display: none !important;
       }
+      /* Hide everything by default */
+      body > * {
+        display: none !important;
+      }
+      /* Only show the print area wrapper */
+      #print-root {
+        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 210mm;
+        height: 297mm;
+        overflow: hidden;
+      }
       .print-area {
         display: block !important;
         width: 210mm;
@@ -33,6 +47,11 @@ const PrintStyles = () => (
         box-shadow: none !important;
         margin: 0 !important;
         transform: none !important;
+      }
+      /* Flatten the layout for print */
+      .print-layout-row {
+        flex-direction: row !important;
+        display: flex !important;
       }
     }
   `}</style>
@@ -45,10 +64,8 @@ const formatDuration = (seconds) => {
   const s = seconds % 60;
 
   if (h > 0) {
-    // > 1 hour: hh:mm
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   } else {
-    // < 1 hour: mm:ss
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 };
@@ -110,7 +127,7 @@ const CategoryModal = ({ isOpen, onClose, categories, setCategories, resetCatego
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-96 max-h-[80vh] flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
           <h3 className="font-bold text-lg">分类设置</h3>
@@ -185,12 +202,12 @@ const TimerContainer = ({
   const currentCat = currentTask ? categories.find(c => c.id === currentTask.categoryId) : null;
 
   return (
-    <div className={`transition-all duration-300 ${isMiniMode ? 'fixed top-0 left-0 w-full h-full bg-white dark:bg-slate-900 p-4 flex flex-col justify-center' : ''}`}>
+    <div className={`transition-all duration-300 ${isMiniMode ? 'fixed top-0 left-0 w-full h-full bg-white dark:bg-slate-900 p-2 flex flex-col justify-center overflow-hidden' : ''} no-print`}>
       {/* Main Timer */}
-      <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-all mb-4 ${isMiniMode ? 'shadow-none border-none' : ''}`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-all mb-4 ${isMiniMode ? 'shadow-none border-none p-2 mb-2 rounded-xl' : ''}`}>
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">主任务 (Main)</h2>
+          <h2 className={`font-bold text-slate-400 uppercase tracking-wider ${isMiniMode ? 'text-[10px]' : 'text-sm'}`}>主任务</h2>
           <button onClick={togglePiP} className="text-slate-400 hover:text-indigo-500 transition-colors" title="Toggle Floating Window">
             {isMiniMode ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
           </button>
@@ -201,59 +218,75 @@ const TimerContainer = ({
             <div>
               <input
                 type="text"
-                placeholder="准备专注于什么？"
-                className={`w-full font-medium bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none px-1 py-2 transition-colors placeholder:text-slate-300 font-sans ${isMiniMode ? 'text-xl' : 'text-2xl'}`}
+                placeholder="专注内容..."
+                className={`w-full font-medium bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none px-1 py-1 transition-colors placeholder:text-slate-300 font-sans ${isMiniMode ? 'text-lg' : 'text-2xl'}`}
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && startTimer()}
               />
             </div>
-            <CategorySelector
-              categories={categories}
-              selectedId={selectedCategoryId}
-              onSelect={setSelectedCategoryId}
-              onOpenSettings={onOpenSettings}
-            />
+            {!isMiniMode && (
+              <CategorySelector
+                categories={categories}
+                selectedId={selectedCategoryId}
+                onSelect={setSelectedCategoryId}
+                onOpenSettings={onOpenSettings}
+              />
+            )}
+            {isMiniMode && (
+              <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
+                {categories.map(cat => (
+                  <div key={cat.id}
+                    onClick={() => setSelectedCategoryId(cat.id)}
+                    className={`w-3 h-3 rounded-full cursor-pointer border ${selectedCategoryId === cat.id ? 'ring-2 ring-offset-1 ring-slate-400' : 'border-transparent'}`}
+                    style={{ backgroundColor: cat.color }}
+                    title={cat.name}
+                  />
+                ))}
+              </div>
+            )}
             <button
               onClick={startTimer}
               disabled={!taskName.trim()}
-              className={`w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 ${isMiniMode ? 'py-3 text-base' : 'py-4 text-lg'}`}
+              className={`w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 ${isMiniMode ? 'py-2 text-sm' : 'py-4 text-lg'}`}
             >
-              <Play fill="currentColor" size={isMiniMode ? 18 : 24} /> 开始专注
+              <Play fill="currentColor" size={isMiniMode ? 14 : 24} /> {isMiniMode ? '开始' : '开始专注'}
             </button>
           </div>
         ) : (
           <div className="text-center py-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-4">
-              <span className="w-2 h-2 rounded-full animate-pulse bg-indigo-500"></span> 专注中
-            </div>
-            <h2 className={`font-bold text-slate-800 dark:text-white mb-2 px-4 truncate ${isMiniMode ? 'text-xl' : 'text-3xl'}`}>{currentTask.name}</h2>
-            <div className="text-sm text-slate-400 mb-6 flex items-center justify-center gap-1">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentCat?.color || '#ccc' }}></span>
+            {!isMiniMode && (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-4">
+                <span className="w-2 h-2 rounded-full animate-pulse bg-indigo-500"></span> 专注中
+              </div>
+            )}
+            <h2 className={`font-bold text-slate-800 dark:text-white mb-1 px-4 truncate ${isMiniMode ? 'text-lg' : 'text-3xl'}`}>{currentTask.name}</h2>
+            <div className="text-xs text-slate-400 mb-2 flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentCat?.color || '#ccc' }}></span>
               {currentCat?.name || '未知'}
             </div>
-            <div className={`font-mono font-bold text-slate-800 dark:text-white tracking-tighter mb-6 tabular-nums ${isMiniMode ? 'text-5xl' : 'text-7xl'}`}>
+            <div className={`font-mono font-bold text-slate-800 dark:text-white tracking-tighter mb-4 tabular-nums ${isMiniMode ? 'text-4xl' : 'text-7xl'}`}>
               {formatDuration(elapsed)}
             </div>
             <button
               onClick={stopTimer}
-              className={`w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded-xl font-bold flex items-center justify-center gap-2 transition-all group ${isMiniMode ? 'py-3 text-base' : 'py-4 text-lg'}`}
+              className={`w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded-xl font-bold flex items-center justify-center gap-2 transition-all group ${isMiniMode ? 'py-2 text-sm' : 'py-4 text-lg'}`}
             >
-              <Square fill="currentColor" size={isMiniMode ? 16 : 20} className="group-hover:scale-110 transition-transform" /> 结束任务
+              <Square fill="currentColor" size={isMiniMode ? 14 : 20} className="group-hover:scale-110 transition-transform" /> {isMiniMode ? '结束' : '结束任务'}
             </button>
           </div>
         )}
       </div>
 
       {/* Sub Timer */}
-      <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 mb-8 ${isMiniMode ? 'border-none bg-slate-100 dark:bg-slate-800' : ''}`}>
-        <div className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">副任务 / 并行 (Sub)</div>
+      <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 mb-8 ${isMiniMode ? 'border-none p-2 bg-slate-50 dark:bg-slate-800 mb-0 rounded-xl' : ''}`}>
+        <div className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">副任务</div>
         {!currentSubTask ? (
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="并行任务 (如: 听音乐)"
-              className="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-slate-400"
+              placeholder="并行..."
+              className="flex-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 outline-none focus:border-slate-400"
               value={subTaskName}
               onChange={(e) => setSubTaskName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && startSubTimer()}
@@ -261,27 +294,27 @@ const TimerContainer = ({
             <button
               onClick={startSubTimer}
               disabled={!subTaskName.trim()}
-              className="p-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              className="p-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
             >
-              <Play size={16} fill="currentColor" />
+              <Play size={12} fill="currentColor" />
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                <Layers size={18} className="text-orange-500" />
+          <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                <Layers size={10} className="text-orange-500" />
               </div>
               <div className="min-w-0">
-                <div className="text-base font-bold text-slate-700 dark:text-slate-200 truncate">{currentSubTask.name}</div>
-                <div className="text-sm font-mono text-slate-500">{formatDuration(subElapsed)}</div>
+                <div className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{currentSubTask.name}</div>
+                <div className="text-[10px] font-mono text-slate-500">{formatDuration(subElapsed)}</div>
               </div>
             </div>
             <button
               onClick={stopSubTimer}
-              className="p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="p-1 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
-              <Square size={18} fill="currentColor" />
+              <Square size={12} fill="currentColor" />
             </button>
           </div>
         )}
@@ -296,76 +329,41 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(endOfWeek.getDate() + 6);
 
-  // LOGIC:
-  // Day starts at 07:00 AM (Visual Top). Ends at 07:00 AM next day (Visual Bottom).
-  // 07:00 - 01:00 (+1) = 18 hours. Density = 2 cells/hr. Total = 36 cells.
-  // 01:00 - 07:00 (+1) = 6 hours. Density = 1 cell/hr. Total = 6 cells.
-  // Total Cells = 42.
-  // Total Height = 168mm (42 * 4mm).
+  // Custom Notes State (in-memory for now, simple implementation)
+  const [notes, setNotes] = useState("Click to add notes...");
 
   const hoursMap = [
-    // 07:00 - 24:00 (17 hours) -> 2 cells each
     7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-    // 00:00 - 01:00 (1 hour) -> 2 cells
     0,
-    // 01:00 - 07:00 (6 hours) -> 1 cell each
     1, 2, 3, 4, 5, 6
   ];
 
-  // Calculate top offset (percentage) for a given time
-  // Time must be normalized to standard date object relative to the 'Day Start' (07:00)
   const getTopAndHeight = (start, durationSec) => {
-    // We need to map [start, start+duration] to visual coordinates.
-    // Base Day: The day the task *statistically* belongs to.
-    // If task starts at 02:00 AM, it might belong to "Previous Day" visually if we consider 7am start.
-    // But simplified: render simple columns.
-    // Mapping:
-    // 07:00 -> 0
-    // ...
-    // 01:00 (+1) -> 36 cells
-    // 07:00 (+1) -> 42 cells
-
-    // Convert time to "visual minute offset from 07:00"
-    // If hour >= 7: offset = (h-7)*60 + m
-    // If hour < 7: offset = (17 + h)*60 + m  <- (17 hours from 7am to 00am)
-
     const getVisualOffset = (d) => {
       let h = d.getHours();
       let m = d.getMinutes();
-      let offsetMinutes = 0;
-
-      if (h >= 7) {
-        offsetMinutes = (h - 7) * 60 + m;
-      } else {
-        // Is next day early morning
-        offsetMinutes = (17 + h) * 60 + m; // 00:00 is (17+0)*60 = 1020 mins from 07:00
-      }
-      return offsetMinutes;
+      if (h >= 7) return (h - 7) * 60 + m;
+      else return (17 + h) * 60 + m;
     };
 
-    // Calculate Y-pos in CELLS (not pixels)
-    // 07:00 - 01:00 (18h = 1080m) -> 36 cells. Ratio: 30 mins = 1 cell.
-    // 01:00 - 07:00 (6h = 360m)   -> 6 cells. Ratio: 60 mins = 1 cell.
-    // Correction: 01:00 happens at visual minute 18*60 = 1080.
-
     const mapMinutesToCells = (min) => {
-      const threshold = 18 * 60; // 1080 (01:00 AM)
-      if (min <= threshold) {
-        return min / 30; // 2 cells per hour -> 1 cell per 30 mins
-      } else {
-        // Base 36 cells + (custom density for remaining)
-        const extra = min - threshold;
-        return 36 + (extra / 60); // 1 cell per 60 mins
-      }
+      const threshold = 18 * 60;
+      if (min <= threshold) return min / 30;
+      else return 36 + ((min - threshold) / 60);
     };
 
     const startOffset = getVisualOffset(start);
     const endOffset = startOffset + (durationSec / 60);
 
+    // Explicit 42 Rows Grid alignment
+    // We want to snap to the nearest "sub-grid" if possible, but exact % is fine
     const startCell = mapMinutesToCells(startOffset);
     const endCell = mapMinutesToCells(endOffset);
 
-    const cellHeight = 100 / 42; // % height of one cell
+    // Convert to row index (1-based) for CSS Grid if we were using it, 
+    // but here we use absolute %.
+    // Total 42 "units" high.
+
     const top = (startCell / 42) * 100;
     const height = ((endCell - startCell) / 42) * 100;
 
@@ -375,20 +373,10 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);
     d.setDate(d.getDate() + i);
-
-    // Filter tasks that belong to this "Flow Day".
-    // A task belongs to "Mon 7am - Tue 7am" if it starts in that range.
-    // Range: [CurrentDay 07:00, NextDay 07:00)
     const rangeStart = new Date(d); rangeStart.setHours(7, 0, 0, 0);
     const rangeEnd = new Date(d); rangeEnd.setDate(d.getDate() + 1); rangeEnd.setHours(7, 0, 0, 0);
-
-    const dayTasks = tasks.filter(t => {
-      const tStart = new Date(t.startTime);
-      return tStart >= rangeStart && tStart < rangeEnd;
-    });
-
+    const dayTasks = tasks.filter(t => { const tStart = new Date(t.startTime); return tStart >= rangeStart && tStart < rangeEnd; });
     const totalDuration = dayTasks.reduce((acc, t) => acc + t.duration, 0);
-
     return {
       date: d.toISOString().split('T')[0],
       dayName: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()],
@@ -400,28 +388,34 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
 
   const totalWeekDuration = weekDays.reduce((acc, day) => acc + day.totalDuration, 0);
 
+  // calculate category stats for chart
+  const categoryStats = categories.map(cat => {
+    const duration = tasks
+      .filter(t => {
+        const d = new Date(t.startTime);
+        return d >= startOfWeek && d <= endOfWeek;
+      })
+      .filter(t => t.categoryId === cat.id)
+      .reduce((acc, t) => acc + t.duration, 0);
+    return { ...cat, duration };
+  }).filter(c => c.duration > 0);
+
+  const maxCatDuration = Math.max(...categoryStats.map(c => c.duration), 1);
+
   return (
-    <div className="print-area w-full bg-white text-slate-900 mx-auto shadow-md my-8 transform scale-90 origin-top flex">
+    <div className="print-area w-full bg-white text-slate-900 mx-auto shadow-md my-8 transform scale-90 origin-top flex print-layout-row">
       {/* LEFT COLUMN: TIMELINE AXIS */}
-      <div className="w-12 flex-shrink-0 flex flex-col pt-[20mm] border-r border-slate-300">
+      <div className="w-10 flex-shrink-0 flex flex-col pt-[15mm] border-r border-slate-300">
         <div className="flex-1 relative">
-          {/* Render 42 cells worth of ticks */}
-          {/* We manually map Hour Labels */}
           {hoursMap.map((h, idx) => {
-            // Determine layout position
-            // h=7 is index 0. top=0.
-            let topCell = 0;
-            if (idx < 18) { // 07:00 to 00:00 (18 items: 7,8..23,0)
-              topCell = idx * 2;
-            } else {
-              topCell = 36 + (idx - 18);
-            }
+            let topCell = idx < 18 ? idx * 2 : 36 + (idx - 18);
             const topPct = (topCell / 42) * 100;
+            const heightPct = idx < 18 ? (2 / 42) * 100 : (1 / 42) * 100;
 
             return (
-              <div key={idx} className="absolute w-full text-right pr-1 text-[10px] text-slate-400 font-mono leading-none border-t border-slate-100"
-                style={{ top: `${topPct}%`, height: idx < 18 ? `${(2 / 42) * 100}%` : `${(1 / 42) * 100}%` }}>
-                <span className="-translate-y-1/2 block">{h}</span>
+              <div key={idx} className="absolute w-full text-right pr-1 border-t border-slate-200"
+                style={{ top: `${topPct}%`, height: `${heightPct}%` }}>
+                <span className="text-[8px] text-slate-400 font-mono -translate-y-1/2 block leading-none">{h}</span>
               </div>
             )
           })}
@@ -430,52 +424,61 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
 
       {/* CENTER: DAYS COLUMNS */}
       <div className="flex-1 flex flex-col">
-        {/* Header Area */}
-        <div className="h-[20mm] flex border-b border-black items-end pb-1">
+        {/* Header */}
+        <div className="h-[15mm] flex border-b border-black items-end pb-1 ml-[1px]">
           {weekDays.map(day => (
             <div key={day.date} className="flex-1 text-center">
-              <div className="text-[10px] text-slate-500 uppercase">{day.dayName}</div>
-              <div className="font-bold text-lg leading-none">{day.dayNum}</div>
+              <div className="text-[8px] text-slate-500 uppercase font-bold tracking-wider">{day.dayName}</div>
+              <div className="font-bold text-base leading-none">{day.dayNum}</div>
             </div>
           ))}
         </div>
 
         {/* Grid Content */}
         <div className="flex-1 flex relative">
-          {/* Background Lines (42 of them) */}
-          <div className="absolute inset-0 flex flex-col pointer-events-none">
+          {/* EXPLICIT GRID BACKGROUND */}
+          <div className="absolute inset-0 flex flex-col pointer-events-none z-0">
+            {/* Rows: 42 of them */}
             {Array.from({ length: 42 }).map((_, i) => (
-              <div key={i} className="flex-1 border-b border-slate-100 border-dashed w-full"></div>
+              <div key={`row-${i}`} className="flex-1 border-b border-slate-100 w-full box-border"></div>
+            ))}
+          </div>
+          <div className="absolute inset-0 flex pointer-events-none z-0">
+            {/* Cols: 7 of them */}
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={`col-${i}`} className="flex-1 border-r border-slate-100 h-full box-border"></div>
             ))}
           </div>
 
-          {/* Day Columns */}
+          {/* Day Columns & Tasks */}
           {weekDays.map(day => (
-            <div key={day.date} className="flex-1 border-r border-slate-200 relative h-full">
-              {/* Tasks */}
+            <div key={day.date} className="flex-1 border-r border-slate-200 relative h-full z-10" style={{ boxSizing: 'border-box' }}>
               {day.tasks.map(t => {
                 const pos = getTopAndHeight(new Date(t.startTime), t.duration);
                 const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc' };
 
                 return (
                   <div key={t.id}
-                    className="absolute left-0.5 right-0.5 rounded-sm overflow-hidden flex items-center justify-center shadow-sm select-none"
+                    className="absolute left-0.5 right-0.5 rounded-[1px] overflow-hidden flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.1)] print:shadow-none select-none border border-white/20 print:border-black/10"
                     style={{
                       top: pos.top,
                       height: pos.height,
                       backgroundColor: cat.color,
-                      opacity: 0.9,
                       zIndex: 10
                     }}
-                    title={`${t.name} (${formatDuration(t.duration)})`}
                   >
-                    <span className="text-white text-[10px] font-bold leading-tight"
+                    <span className="text-white text-[8px] print:text-[6px] font-bold leading-none tracking-tight mix-blend-plus-lighter print:hidden"
                       style={{
                         writingMode: 'vertical-rl',
                         textOrientation: 'upright',
-                        maxHeight: '100%'
+                        maxHeight: '95%'
                       }}>
                       {t.name}
+                    </span>
+                    {/* Print Optimized Text */}
+                    <span className="hidden print:block text-white print:text-[6px] font-bold leading-none text-center transform scale-90"
+                      style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>
+                      {t.name.slice(0, 4)}
                     </span>
                   </div>
                 )
@@ -485,46 +488,53 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
         </div>
       </div>
 
-      {/* RIGHT: STATS & INFO */}
-      <div className="w-[45mm] flex-shrink-0 border-l border-slate-300 flex flex-col p-2">
+      {/* RIGHT: VIZ & STATS */}
+      <div className="w-[50mm] flex-shrink-0 border-l border-slate-300 flex flex-col p-3 bg-slate-50 print:bg-white">
         <div className="mb-4">
-          <h2 className="font-bold text-xl">{startOfWeek.getFullYear()}</h2>
-          <div className="text-xs text-slate-500">{startOfWeek.toLocaleDateString()} - <br />{endOfWeek.toLocaleDateString()}</div>
+          <h2 className="font-bold text-2xl">{startOfWeek.getFullYear()}</h2>
+          <div className="text-[10px] text-slate-500 mt-1">{startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}</div>
         </div>
 
-        {/* Stats */}
-        <div className="flex-1">
-          <h3 className="font-bold text-sm border-b border-black mb-2">STATS</h3>
-          <div className="mb-2">
-            <div className="text-[10px] text-slate-500">TOTAL</div>
-            <div className="font-mono font-bold text-lg">{formatDuration(totalWeekDuration)}</div>
-          </div>
-          <div className="space-y-1">
-            {categories.map(cat => {
-              const catDuration = tasks
-                .filter(t => {
-                  const d = new Date(t.startTime);
-                  return d >= startOfWeek && d <= endOfWeek; // Simple week filter
-                })
-                .filter(t => t.categoryId === cat.id)
-                .reduce((acc, t) => acc + t.duration, 0);
-              if (catDuration === 0) return null;
+        {/* VISUAL STATS (Bar Chart) */}
+        <div className="mb-6">
+          <h3 className="font-bold text-xs border-b border-black mb-3 pb-1 flex justify-between">
+            <span>STATS</span>
+            <span className="font-mono">{formatDuration(totalWeekDuration)}</span>
+          </h3>
+          <div className="space-y-2">
+            {categoryStats.map(cat => {
+              const pct = (cat.duration / maxCatDuration) * 100;
               return (
-                <div key={cat.id} className="flex justify-between items-center text-[10px]">
-                  <div className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.color }}></span>
-                    {cat.name}
+                <div key={cat.id} className="flex items-center gap-2 text-[10px]">
+                  <div className="w-12 text-right truncate text-slate-500">{cat.name}</div>
+                  <div className="flex-1 h-3 bg-slate-100 rounded-sm overflow-hidden relative">
+                    <div className="absolute top-0 left-0 h-full rounded-sm min-w-[2px]"
+                      style={{ width: `${pct}%`, backgroundColor: cat.color }}></div>
                   </div>
-                  <div className="font-mono opacity-70">{formatDuration(catDuration)}</div>
+                  <div className="w-10 font-mono text-right opacity-70">{formatDuration(cat.duration)}</div>
                 </div>
               )
             })}
+            {categoryStats.length === 0 && <div className="text-[10px] text-slate-400 italic">No data yet</div>}
           </div>
         </div>
 
-        {/* 4mm Grid Sample */}
-        <div className="h-[50mm] border border-slate-300 grid-pattern-4mm relative mt-4">
-          <span className="absolute bottom-1 right-1 text-[8px] text-slate-300">4mm</span>
+        {/* CUSTOMIZABLE MEMO */}
+        <div className="flex-1 flex flex-col">
+          <h3 className="font-bold text-xs border-b border-black mb-2 pb-1">MEMO / ANALYSIS</h3>
+          <div
+            className="flex-1 bg-white border border-slate-200 rounded p-2 text-[10px] leading-relaxed outline-none focus:ring-1 focus:ring-slate-300 text-slate-600 resize-none whitespace-pre-wrap font-sans grid-pattern-4mm"
+            contentEditable
+            suppressContentEditableWarning
+          >
+            Notes...
+          </div>
+        </div>
+
+        {/* 4mm Grid Ref */}
+        <div className="mt-4 pt-2 border-t border-slate-200 flex justify-between items-end">
+          <div className="text-[8px] text-slate-300">4mm Grid Ref</div>
+          <div className="w-8 h-8 border border-slate-300 grid-pattern-4mm"></div>
         </div>
       </div>
     </div>
@@ -533,345 +543,138 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
 
 
 export default function App() {
-  // --- State ---
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [tasks, setTasks] = useState([]);
-  const [activeTask, setActiveTask] = useState(null); // Unified active task state? No, separate.
   const [currentTask, setCurrentTask] = useState(null);
   const [taskName, setTaskName] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORIES[0].id);
-
-  // Sub Task
   const [currentSubTask, setCurrentSubTask] = useState(null);
   const [subTaskName, setSubTaskName] = useState('');
   const [subElapsed, setSubElapsed] = useState(0);
-
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
-
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-
   const timerRef = useRef(null);
   const subTimerRef = useRef(null);
   const pipWindowRef = useRef(null);
 
-  // --- Effects ---
   useEffect(() => {
     try {
-      const savedCategories = localStorage.getItem('timeflow_categories');
-      if (savedCategories) setCategories(JSON.parse(savedCategories));
-      const savedTasks = localStorage.getItem('timeflow_tasks');
-      if (savedTasks) setTasks(JSON.parse(savedTasks));
-
-      // Restore Active
-      const savedCurrent = localStorage.getItem('timeflow_current');
-      if (savedCurrent) {
-        const parsed = JSON.parse(savedCurrent);
-        setCurrentTask(parsed);
-        setTaskName(parsed.name || '');
-        if (parsed.categoryId) setSelectedCategoryId(parsed.categoryId);
-      }
-      const savedSub = localStorage.getItem('timeflow_sub_current');
-      if (savedSub) {
-        const parsed = JSON.parse(savedSub);
-        setCurrentSubTask(parsed);
-        setSubTaskName(parsed.name || '');
-      }
+      if (localStorage.getItem('timeflow_categories')) setCategories(JSON.parse(localStorage.getItem('timeflow_categories')));
+      if (localStorage.getItem('timeflow_tasks')) setTasks(JSON.parse(localStorage.getItem('timeflow_tasks')));
+      if (localStorage.getItem('timeflow_current')) setCurrentTask(JSON.parse(localStorage.getItem('timeflow_current')));
+      if (localStorage.getItem('timeflow_sub_current')) setCurrentSubTask(JSON.parse(localStorage.getItem('timeflow_sub_current')));
     } catch (e) { console.error(e); }
   }, []);
 
   useEffect(() => { localStorage.setItem('timeflow_tasks', JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => {
-    if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask));
-    else localStorage.removeItem('timeflow_current');
-  }, [currentTask]);
-  useEffect(() => {
-    if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask));
-    else localStorage.removeItem('timeflow_sub_current');
-  }, [currentSubTask]);
+  useEffect(() => { if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask)); else localStorage.removeItem('timeflow_current'); }, [currentTask]);
+  useEffect(() => { if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask)); else localStorage.removeItem('timeflow_sub_current'); }, [currentSubTask]);
 
-  // Timer Logic
   useEffect(() => {
     if (currentTask) {
-      const calculateElapsed = () => {
-        const now = Date.now();
-        const start = new Date(currentTask.startTime).getTime();
-        setElapsed(Math.max(0, Math.floor((now - start) / 1000)));
-      };
-      calculateElapsed();
-      timerRef.current = setInterval(calculateElapsed, 1000);
-    } else {
-      clearInterval(timerRef.current);
-      setElapsed(0);
-    }
+      const calc = () => setElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentTask.startTime).getTime()) / 1000)));
+      calc(); timerRef.current = setInterval(calc, 1000);
+    } else { clearInterval(timerRef.current); setElapsed(0); }
     return () => clearInterval(timerRef.current);
   }, [currentTask]);
 
   useEffect(() => {
     if (currentSubTask) {
-      const calculateSub = () => {
-        const now = Date.now();
-        const start = new Date(currentSubTask.startTime).getTime();
-        setSubElapsed(Math.max(0, Math.floor((now - start) / 1000)));
-      };
-      calculateSub();
-      subTimerRef.current = setInterval(calculateSub, 1000);
-    } else {
-      clearInterval(subTimerRef.current);
-      setSubElapsed(0);
-    }
+      const calc = () => setSubElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentSubTask.startTime).getTime()) / 1000)));
+      calc(); subTimerRef.current = setInterval(calc, 1000);
+    } else { clearInterval(subTimerRef.current); setSubElapsed(0); }
     return () => clearInterval(subTimerRef.current);
   }, [currentSubTask]);
 
-  // Actions
-  const startTimer = () => {
-    if (!taskName.trim()) return;
-    const newTask = {
-      id: generateId(),
-      name: taskName,
-      startTime: new Date().toISOString(),
-      duration: 0,
-      categoryId: selectedCategoryId,
-      type: 'main'
-    };
-    setCurrentTask(newTask);
-  };
+  const startTimer = () => { if (!taskName.trim()) return; setCurrentTask({ id: generateId(), name: taskName, startTime: new Date().toISOString(), duration: 0, categoryId: selectedCategoryId }); };
+  const stopTimer = () => { if (!currentTask) return; setTasks([{ ...currentTask, endTime: new Date().toISOString(), duration: elapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentTask(null); setTaskName(''); setElapsed(0); };
+  const startSubTimer = () => { if (!subTaskName.trim()) return; setCurrentSubTask({ id: generateId(), name: subTaskName, startTime: new Date().toISOString(), duration: 0, categoryId: (categories.find(c => c.id === 'sub') || categories[0]).id }); };
+  const stopSubTimer = () => { if (!currentSubTask) return; setTasks([{ ...currentSubTask, endTime: new Date().toISOString(), duration: subElapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentSubTask(null); setSubTaskName(''); setSubElapsed(0); };
+  const deleteTask = (id) => { if (confirm('Del?')) setTasks(tasks.filter(t => t.id !== id)); };
 
-  const stopTimer = () => {
-    if (!currentTask) return;
-    const endTime = new Date().toISOString();
-    const completedTask = {
-      ...currentTask,
-      endTime,
-      duration: elapsed,
-      date: new Date().toISOString().split('T')[0] // Might need flow day logic? Keeping simple for now
-    };
-    setTasks([completedTask, ...tasks]);
-    setCurrentTask(null);
-    setTaskName('');
-    setElapsed(0);
-  };
-
-  const startSubTimer = () => {
-    if (!subTaskName.trim()) return;
-    const subCat = categories.find(c => c.id === 'sub') || categories[categories.length - 1];
-    const newSubTask = {
-      id: generateId(),
-      name: subTaskName,
-      startTime: new Date().toISOString(),
-      duration: 0,
-      categoryId: subCat.id,
-      type: 'sub'
-    };
-    setCurrentSubTask(newSubTask);
-  };
-
-  const stopSubTimer = () => {
-    if (!currentSubTask) return;
-    const endTime = new Date().toISOString();
-    const completedTask = {
-      ...currentSubTask,
-      endTime,
-      duration: subElapsed,
-      date: new Date().toISOString().split('T')[0]
-    };
-    setTasks([completedTask, ...tasks]);
-    setCurrentSubTask(null);
-    setSubTaskName('');
-    setSubElapsed(0);
-  };
-
-  const deleteTask = (id) => {
-    if (confirm('确定删除这条记录吗？')) {
-      setTasks(tasks.filter(t => t.id !== id));
-    }
-  };
-
-  // PiP Logic
   const togglePiP = async () => {
-    if (pipWindowRef.current) {
-      pipWindowRef.current.close();
-      pipWindowRef.current = null;
-      setIsMiniMode(false);
-      return;
-    }
-
-    if (!window.documentPictureInPicture) {
-      setIsMiniMode(!isMiniMode); // Fallback
-      return;
-    }
-
+    if (pipWindowRef.current) { pipWindowRef.current.close(); return; }
+    if (!window.documentPictureInPicture) { setIsMiniMode(!isMiniMode); return; }
     try {
-      const pipWindow = await window.documentPictureInPicture.requestWindow({
-        width: 350,
-        height: 500, // Taller for combined
-      });
+      const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 300, height: 400 });
       pipWindowRef.current = pipWindow;
       setIsMiniMode(true);
-
-      // Copy styles
-      Array.from(document.styleSheets).forEach((styleSheet) => {
+      Array.from(document.styleSheets).forEach(s => {
         try {
-          if (styleSheet.href) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = styleSheet.href;
-            pipWindow.document.head.appendChild(link);
-          } else if (styleSheet.cssRules) {
-            const style = document.createElement('style');
-            style.textContent = Array.from(styleSheet.cssRules).map(r => r.cssText).join('');
-            pipWindow.document.head.appendChild(style);
-          }
+          if (s.href) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = s.href; pipWindow.document.head.appendChild(l); }
+          else if (s.cssRules) { const st = document.createElement('style'); st.textContent = [...s.cssRules].map(r => r.cssText).join(''); pipWindow.document.head.appendChild(st); }
         } catch (e) { }
       });
-
-      // Move Container
-      const timerContainer = document.getElementById('unified-timer-container');
-      if (timerContainer) {
-        pipWindow.document.body.appendChild(timerContainer);
-      }
-
+      const c = document.getElementById('unified-timer-container');
+      if (c) pipWindow.document.body.appendChild(c);
       pipWindow.addEventListener('pagehide', () => {
-        const root = document.getElementById('unified-timer-root');
-        if (root && timerContainer) {
-          root.appendChild(timerContainer);
-        }
+        const r = document.getElementById('unified-timer-root');
+        if (r && c) r.appendChild(c);
         pipWindowRef.current = null;
         setIsMiniMode(false);
       });
-
-    } catch (e) {
-      console.error(e);
-      alert("启动画中画失败");
-    }
+    } catch (e) { console.error(e); alert("PiP Error"); }
   };
-
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-colors pb-20">
       <PrintStyles />
-      <CategoryModal
-        isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
-        categories={categories}
-        setCategories={setCategories}
-        resetCategories={() => setCategories(DEFAULT_CATEGORIES)}
-      />
+      <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} setCategories={setCategories} resetCategories={() => setCategories(DEFAULT_CATEGORIES)} />
 
-      {/* --- PAGE HEADER --- */}
+      {/* NO PRINT HEADER */}
       <div className="no-print pt-6 px-6 mb-4 flex justify-between items-center max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          TimeFlow <span className="font-light text-slate-400 text-lg">Weeks</span>
-        </h1>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">TimeFlow Weeks</h1>
         <div className="flex gap-2">
-          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all" onClick={() => window.print()}>
-            <Printer size={20} className="text-slate-600 dark:text-slate-300" />
-          </button>
-          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all" onClick={() => setIsCategoryModalOpen(true)}>
-            <Settings size={20} className="text-slate-600 dark:text-slate-300" />
-          </button>
+          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm" onClick={() => window.print()}><Printer size={20} className="text-slate-600 dark:text-slate-300" /></button>
+          <button className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm" onClick={() => setIsCategoryModalOpen(true)}><Settings size={20} className="text-slate-600 dark:text-slate-300" /></button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 max-w-xl relative">
+      <div className="container mx-auto px-4 max-w-xl relative no-print">
         <div id="unified-timer-root">
           <div id="unified-timer-container">
             <TimerContainer
-              currentTask={currentTask}
-              taskName={taskName}
-              setTaskName={setTaskName}
-              selectedCategoryId={selectedCategoryId}
-              setSelectedCategoryId={setSelectedCategoryId}
-              categories={categories}
-              startTimer={startTimer}
-              stopTimer={stopTimer}
-              elapsed={elapsed}
-
-              currentSubTask={currentSubTask}
-              subTaskName={subTaskName}
-              setSubTaskName={setSubTaskName}
-              startSubTimer={startSubTimer}
-              stopSubTimer={stopSubTimer}
-              subElapsed={subElapsed}
-
-              isMiniMode={isMiniMode}
-              togglePiP={togglePiP}
-              onOpenSettings={() => setIsCategoryModalOpen(true)}
+              currentTask={currentTask} taskName={taskName} setTaskName={setTaskName} selectedCategoryId={selectedCategoryId} setSelectedCategoryId={setSelectedCategoryId} categories={categories} startTimer={startTimer} stopTimer={stopTimer} elapsed={elapsed}
+              currentSubTask={currentSubTask} subTaskName={subTaskName} setSubTaskName={setSubTaskName} startSubTimer={startSubTimer} stopSubTimer={stopSubTimer} subElapsed={subElapsed}
+              isMiniMode={isMiniMode} togglePiP={togglePiP} onOpenSettings={() => setIsCategoryModalOpen(true)}
             />
           </div>
         </div>
 
-        {/* --- TASK LIST SECTION --- */}
-        <div className="no-print bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <button onClick={() => {
-                const d = new Date(viewDate); d.setDate(d.getDate() - 1);
-                setViewDate(d.toISOString().split('T')[0]);
-              }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><ChevronLeft /></button>
-
-              <div className="text-lg font-bold flex items-center gap-2">
-                <Calendar size={18} className="text-indigo-500" />
-                {viewDate}
-                {viewDate === new Date().toISOString().split('T')[0] && <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">Today</span>}
-              </div>
-
-              <button onClick={() => {
-                const d = new Date(viewDate); d.setDate(d.getDate() + 1);
-                setViewDate(d.toISOString().split('T')[0]);
-              }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><ChevronRight /></button>
-            </div>
-
-            <div className="text-sm text-slate-400">
-              共 {tasks.filter(t => t.date === viewDate).length} 项
-            </div>
+        {/* Task List (No Print) */}
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate() - 1); setViewDate(d.toISOString().split('T')[0]) }}><ChevronLeft /></button>
+            <div className="font-bold flex gap-2 items-center"><Calendar size={18} /> {viewDate}</div>
+            <button onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate() + 1); setViewDate(d.toISOString().split('T')[0]) }}><ChevronRight /></button>
           </div>
-
-          <div className="space-y-3">
-            {tasks.filter(t => t.date === viewDate).length === 0 ? (
-              <div className="text-center py-10 text-slate-400">
-                <div className="mb-2">☕</div>
-                还没有记录，开始第一个任务吧
+          <div className="space-y-2">
+            {tasks.filter(t => t.date === viewDate).length === 0 && <div className="text-center text-slate-400 py-4">No tasks</div>}
+            {tasks.filter(t => t.date === viewDate).map(t => (
+              <div key={t.id} className="flex justify-between p-3 hover:bg-slate-50 border rounded-xl border-transparent hover:border-slate-100">
+                <div className="flex gap-3 items-center">
+                  <div className="w-1 h-8 rounded-full" style={{ backgroundColor: (categories.find(c => c.id === t.categoryId) || {}).color }}></div>
+                  <div><div className="font-bold">{t.name}</div><div className="text-xs text-slate-400">{formatTime(new Date(t.startTime))}</div></div>
+                </div>
+                <div className="flex gap-4 items-center">
+                  <div className="font-mono font-bold">{formatDuration(t.duration)}</div>
+                  <button onClick={() => deleteTask(t.id)}><Trash2 size={16} className="text-slate-300 hover:text-red-500" /></button>
+                </div>
               </div>
-            ) : (
-              tasks.filter(t => t.date === viewDate)
-                .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-                .map(t => {
-                  const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc', name: 'N/A' };
-                  return (
-                    <div key={t.id} className="group flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-1 h-8 rounded-full`} style={{ backgroundColor: cat.color }}></div>
-                        <div>
-                          <div className="font-bold text-slate-700 dark:text-slate-200">{t.name}</div>
-                          <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700">{cat.name}</span>
-                            <span className="font-mono">{formatTime(new Date(t.startTime))} - {formatTime(new Date(t.endTime))}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="font-mono font-bold text-lg text-slate-700 dark:text-slate-300">
-                          {formatDuration(t.duration)}
-                        </div>
-                        <button onClick={() => deleteTask(t.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })
-            )}
+            ))}
           </div>
         </div>
       </div>
 
-      {/* TIMELINE */}
-      <div className="container mx-auto px-4 max-w-4xl pb-10">
-        <h2 className="text-xl font-bold mb-4 px-4 text-slate-500">Weekly Overview</h2>
-        <WeeksLayout viewDate={viewDate} tasks={tasks} categories={categories} />
+      {/* TIMELINE (PRINT ROOT) */}
+      <div id="print-root">
+        <div className="container mx-auto px-4 max-w-4xl pb-10">
+          <h2 className="text-xl font-bold mb-4 px-4 text-slate-500 no-print">Weekly Overview</h2>
+          <WeeksLayout viewDate={viewDate} tasks={tasks} categories={categories} />
+        </div>
       </div>
     </div>
   );
