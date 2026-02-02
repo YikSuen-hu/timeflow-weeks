@@ -237,7 +237,7 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
     <div className="print-area flex flex-row">
       {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
       <div className="flex-shrink-0 pt-[10mm] mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
-        <div className="flex h-full border-r border-slate-300">
+        <div className="flex h-full">
           {/* Axis */}
           <div className="w-8 flex-shrink-0 flex flex-col mr-1">
             {/* Spacer to match Header height exactly (including border thickness) */}
@@ -269,7 +269,7 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
               ))}
             </div>
             {/* Grid */}
-            <div className="relative w-[28mm] h-[168mm] border-t border-slate-200">
+            <div className="relative w-[28mm] h-[168mm] border-t border-slate-200 border-r border-slate-300">
               {/* BG Grid Lines (42 Rows) */}
               {Array.from({ length: 42 }).map((_, i) => (
                 <div key={i} className="absolute w-full border-b border-slate-100 box-border" style={{ top: `${(i + 1) * 4}mm`, height: '0' }}></div>
