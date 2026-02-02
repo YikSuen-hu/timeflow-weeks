@@ -238,20 +238,22 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
       {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
       <div className="flex-shrink-0 flex pt-[10mm] border-r border-slate-300 mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
         {/* Axis */}
-        <div className="w-8 flex-shrink-0 flex flex-col relative h-[168mm] mr-1">
+        <div className="w-8 flex-shrink-0 flex flex-col mr-1">
           {/* Spacer to match Header height exactly */}
           <div className="h-[10mm] mb-[1px]" />
 
-          {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
-            // Y position in cells
-            let cellY = i < 18 ? i * 2 : 36 + (i - 18);
-            return (
-              <div key={i} className="absolute w-full text-right text-[8px] text-slate-400 font-mono leading-none border-t border-slate-200 pr-1"
-                style={{ top: `${cellY * 4}mm`, height: i < 18 ? '8mm' : '4mm' }}>
-                <span className="-translate-y-1/2 block">{h}</span>
-              </div>
-            )
-          })}
+          <div className="relative w-full h-[168mm]">
+            {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
+              // Y position in cells
+              let cellY = i < 18 ? i * 2 : 36 + (i - 18);
+              return (
+                <div key={i} className="absolute w-full text-right text-[8px] text-slate-400 font-mono leading-none border-t border-slate-200 pr-1"
+                  style={{ top: `${cellY * 4}mm`, height: i < 18 ? '8mm' : '4mm' }}>
+                  <span className="-translate-y-1/2 block">{h}</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* The 28mm Strip */}
