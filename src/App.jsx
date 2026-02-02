@@ -24,11 +24,14 @@ const PrintStyles = () => (
         display: none !important;
       }
       /* Hide everything by default */
-      body > * {
-        display: none !important;
+      /* Hide everything by default using visibility to keep layout calculation if needed, 
+         but mostly to allow specific children to be visible */
+      body {
+        visibility: hidden;
       }
       /* Only show the print area wrapper */
       #print-root {
+        visibility: visible;
         display: block !important;
         position: absolute;
         top: 0;
@@ -235,7 +238,10 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
       {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
       <div className="flex-shrink-0 flex pt-[10mm] border-r border-slate-300 mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
         {/* Axis */}
-        <div className="w-8 flex-shrink-0 flex flex-col relative h-[168mm] mr-1" style={{ marginTop: 'calc(10mm + 1px)' }}>
+        <div className="w-8 flex-shrink-0 flex flex-col relative h-[168mm] mr-1">
+          {/* Spacer to match Header height exactly */}
+          <div className="h-[10mm] mb-[1px]" />
+
           {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
             // Y position in cells
             let cellY = i < 18 ? i * 2 : 36 + (i - 18);
