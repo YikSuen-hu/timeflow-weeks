@@ -129,30 +129,52 @@ export default function App() {
 
   // Data Persistence
   useEffect(() => {
-    const savedCategories = localStorage.getItem('timeflow_categories');
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    try {
+      const savedCategories = localStorage.getItem('timeflow_categories');
+      if (savedCategories) setCategories(JSON.parse(savedCategories));
+    } catch (e) {
+      console.error("Failed to load categories", e);
+    }
 
-    const savedTasks = localStorage.getItem('timeflow_tasks');
-    if (savedTasks) setTasks(JSON.parse(savedTasks));
+    try {
+      const savedTasks = localStorage.getItem('timeflow_tasks');
+      if (savedTasks) setTasks(JSON.parse(savedTasks));
+    } catch (e) {
+      console.error("Failed to load tasks", e);
+    }
 
-    const savedPlans = localStorage.getItem('timeflow_plans');
-    if (savedPlans) setPlans(JSON.parse(savedPlans));
+    try {
+      const savedPlans = localStorage.getItem('timeflow_plans');
+      if (savedPlans) setPlans(JSON.parse(savedPlans));
+    } catch (e) {
+      console.error("Failed to load plans", e);
+    }
 
     // Restore Main Task
-    const savedCurrent = localStorage.getItem('timeflow_current');
-    if (savedCurrent) {
-      const parsed = JSON.parse(savedCurrent);
-      setCurrentTask(parsed);
-      setTaskName(parsed.name);
-      if (parsed.categoryId) setSelectedCategoryId(parsed.categoryId);
+    try {
+      const savedCurrent = localStorage.getItem('timeflow_current');
+      if (savedCurrent) {
+        const parsed = JSON.parse(savedCurrent);
+        setCurrentTask(parsed);
+        setTaskName(parsed.name || '');
+        if (parsed.categoryId) setSelectedCategoryId(parsed.categoryId);
+      }
+    } catch (e) {
+      console.error("Failed to load current task", e);
+      localStorage.removeItem('timeflow_current');
     }
 
     // Restore Sub Task
-    const savedSub = localStorage.getItem('timeflow_sub_current');
-    if (savedSub) {
-      const parsed = JSON.parse(savedSub);
-      setCurrentSubTask(parsed);
-      setSubTaskName(parsed.name);
+    try {
+      const savedSub = localStorage.getItem('timeflow_sub_current');
+      if (savedSub) {
+        const parsed = JSON.parse(savedSub);
+        setCurrentSubTask(parsed);
+        setSubTaskName(parsed.name || '');
+      }
+    } catch (e) {
+      console.error("Failed to load sub task", e);
+      localStorage.removeItem('timeflow_sub_current');
     }
   }, []);
 
