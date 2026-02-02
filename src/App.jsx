@@ -132,6 +132,84 @@ const CategoryModal = ({ isOpen, onClose, categories, setCategories, resetCatego
   );
 };
 
+// --- Manual Entry Modal ---
+const ManualEntryModal = ({ isOpen, onClose, categories, onSave }) => {
+  if (!isOpen) return null;
+  const [name, setName] = useState('');
+  const [categoryId, setCategoryId] = useState(categories[0].id);
+  const [startTime, setStartTime] = useState(() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  });
+  const [duration, setDuration] = useState(30); // minutes
+
+  const handleSave = () => {
+    if (!name.trim()) return alert('请输入任务名称');
+    const start = new Date(startTime);
+    const durationSec = duration * 60;
+    const task = {
+      id: generateId(),
+      name,
+      categoryId,
+      startTime: start.toISOString(),
+      endTime: new Date(start.getTime() + durationSec * 1000).toISOString(),
+      duration: durationSec,
+      date: start.toISOString().split('T')[0],
+      isManual: true
+    };
+    onSave(task);
+    onClose();
+    // Reset form slightly for next use
+    setName('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl w-80 p-4 shadow-xl border border-slate-200 dark:border-slate-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-lg">补登专注记录</h3>
+          <button onClick={onClose}><X size={18} className="text-slate-400" /></button>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-bold text-slate-500 block mb-1">任务名称</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full text-sm border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-700 outline-none focus:border-indigo-500" autoFocus />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 block mb-1">分类</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategoryId(cat.id)}
+                  className={`px-2 py-1 rounded text-xs border ${categoryId === cat.id ? 'ring-1 ring-offset-1' : 'opacity-70 hover:opacity-100'}`}
+                  style={{ backgroundColor: cat.color, borderColor: cat.color, color: 'white' }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-bold text-slate-500 block mb-1">开始时间</label>
+              <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full text-xs border rounded px-1 py-1.5 dark:bg-slate-900 dark:border-slate-700" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-500 block mb-1">时长 (分钟)</label>
+              <input type="number" min="1" value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full text-xs border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-700" />
+            </div>
+          </div>
+          <button onClick={handleSave} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg mt-2 flex items-center justify-center gap-2">
+            <Check size={16} /> 确认补登
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TimerContainer = ({ currentTask, taskName, setTaskName, selectedCategoryId, setSelectedCategoryId, categories, startTimer, stopTimer, elapsed, currentSubTask, subTaskName, setSubTaskName, startSubTimer, stopSubTimer, subElapsed, isMiniMode, togglePiP, onOpenSettings }) => {
   const currentCat = currentTask ? categories.find(c => c.id === currentTask.categoryId) : null;
   return (
@@ -187,7 +265,7 @@ const TimerContainer = ({ currentTask, taskName, setTaskName, selectedCategoryId
   );
 };
 
-const WeeksLayout = ({ viewDate, tasks, categories }) => {
+const WeeksLayout = ({ viewDate, tasks, categories, onOpenManualEntry }) => {
   const currentDate = new Date(viewDate);
   const startOfWeek = getStartOfWeek(currentDate);
   const endOfWeek = new Date(startOfWeek);
@@ -210,7 +288,7 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
 
   // Position Helpers (Strict 4mm)
   // Rows 0-17 (7am-0am) -> 2 cells/hr
-  // Rows 18-41 (0am-7am) -> ? User said 7am-1am=36cells, 1am-7am=6cells. 
+  // Rows 18-41 (0am-7am) -> ? User said 7am-1am=36cells, 1am-7am=6cells.
   // 7am-1am (18 hours) * 2 = 36 cells.
   // 1am-7am (6 hours) * 1 = 6 cells.
   // Total 42 cells. Each cell 4mm.
@@ -310,9 +388,14 @@ const WeeksLayout = ({ viewDate, tasks, categories }) => {
       <div className="flex-1 flex flex-col pt-[10mm] pr-[10mm] h-full">
         {/* Top Header */}
         <div className="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-6">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight text-slate-800">{startOfWeek.getFullYear()}</h1>
-            <div className="text-sm text-slate-500 font-mono tracking-widest uppercase">Weekly Report</div>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-slate-800">{startOfWeek.getFullYear()}</h1>
+              <div className="text-sm text-slate-500 font-mono tracking-widest uppercase">Weekly Report</div>
+            </div>
+            <button onClick={onOpenManualEntry} className="mb-2 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold flex items-center gap-1 no-print" title="补登记录">
+              <Plus size={12} /> 补登
+            </button>
           </div>
           <div className="text-right">
             <div className="text-xl font-bold">{startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}</div>
@@ -378,6 +461,7 @@ export default function App() {
   const [elapsed, setElapsed] = useState(0);
   const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isManualEntryModalOpen, setIsManualEntryModalOpen] = useState(false);
   const timerRef = useRef(null);
   const subTimerRef = useRef(null);
   const pipWindowRef = useRef(null);
@@ -404,6 +488,10 @@ export default function App() {
   const startSubTimer = () => { if (!subTaskName.trim()) return; setCurrentSubTask({ id: generateId(), name: subTaskName, startTime: new Date().toISOString(), duration: 0, categoryId: (categories.find(c => c.id === 'sub') || categories[0]).id }); };
   const stopSubTimer = () => { if (!currentSubTask) return; setTasks([{ ...currentSubTask, endTime: new Date().toISOString(), duration: subElapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentSubTask(null); setSubTaskName(''); setSubElapsed(0); };
 
+  const handleManualTask = (task) => {
+    setTasks(prev => [...prev, task]);
+  };
+
   const togglePiP = async () => {
     if (pipWindowRef.current) { pipWindowRef.current.close(); return; }
     if (!window.documentPictureInPicture) { setIsMiniMode(!isMiniMode); return; }
@@ -422,6 +510,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-colors pb-20">
       <PrintStyles />
       <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} setCategories={setCategories} resetCategories={() => setCategories(DEFAULT_CATEGORIES)} />
+      <ManualEntryModal isOpen={isManualEntryModalOpen} onClose={() => setIsManualEntryModalOpen(false)} categories={categories} onSave={handleManualTask} />
 
       {/* NO PRINT UI */}
       <div className="no-print pt-6 px-6 mb-4 flex justify-between items-center max-w-4xl mx-auto">
@@ -438,7 +527,7 @@ export default function App() {
       {/* PRINT ROOT - Enforce Flex Layout */}
       <div id="print-root">
         <div className="print-area">
-          <WeeksLayout viewDate={viewDate} tasks={tasks} categories={categories} />
+          <WeeksLayout viewDate={viewDate} tasks={tasks} categories={categories} onOpenManualEntry={() => setIsManualEntryModalOpen(true)} />
         </div>
       </div>
     </div>
