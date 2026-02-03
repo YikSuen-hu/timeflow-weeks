@@ -1,84 +1,74 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Play, Square, Maximize2, Minimize2, Printer, Trash2,
-  Clock, ChevronRight, ChevronLeft, Calendar, Layers, Settings,
-  Plus, X, Save, RotateCcw, Edit2, Check, BarChart2
+  Clock, ChevronRight, ChevronLeft, CheckCircle, Plus,
+  Edit2, X, Save, Settings, RotateCcw, Zap, Eye, EyeOff, Moon, Sun,
+  BarChart2, PieChart, Calendar, PictureInPicture2, Move
 } from 'lucide-react';
 
-// --- CSS for Print & Grid ---
+// --- 1. Styles & Constants ---
+
 const PrintStyles = () => (
   <style>{`
     @media print {
       @page {
         size: A4 portrait; 
-        margin: 0;
+        margin: 10mm;
       }
       body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        background-color: white;
-        margin: 0;
-        padding: 0;
+        background: white !important;
       }
       .no-print {
         display: none !important;
       }
-      /* Hide everything by default */
-      /* Hide everything by default using visibility to keep layout calculation if needed, 
-         but mostly to allow specific children to be visible */
-      body {
-        visibility: hidden;
-      }
-      /* Only show the print area wrapper */
-      #print-root {
-        visibility: visible;
-        display: block !important;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 210mm;
-        height: 297mm;
-        overflow: hidden;
-      }
       .print-area {
         display: flex !important;
-        width: 210mm;
-        height: 297mm;
-        background: white;
-        overflow: hidden;
-        position: relative;
+        flex-direction: row !important;
+        gap: 10mm !important;
+        width: auto !important; 
+        height: auto;
+        overflow: visible;
         box-shadow: none !important;
-        margin: 0 !important;
-        transform: none !important;
-        align-items: flex-start;
+        border: none !important;
+        background: transparent !important;
+        margin: 0 auto;
+      }
+      .print-chart-container {
+        background: white;
+        box-shadow: none !important;
+        border: 1px solid #eee; 
       }
     }
     
-    /* Strict Millimeter Sizing Classes */
-    .w-4mm { width: 4mm !important; }
-    .h-4mm { height: 4mm !important; }
-    .w-28mm { width: 28mm !important; }
-    .h-168mm { height: 168mm !important; }
+    .grid-pattern-4mm {
+      background-size: 4mm 4mm;
+      background-image:
+        linear-gradient(to right, rgba(200, 200, 200, 0.3) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+    }
+
+    .bg-dot-pattern {
+      background-color: #f8fafc;
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .dark .bg-dot-pattern {
+      background-color: #0f172a;
+      background-image: radial-gradient(#1e293b 1px, transparent 1px);
+    }
   `}</style>
 );
 
-// --- Utilities ---
-const formatDuration = (seconds) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+const COLOR_PALETTES = {
+  '莫兰迪粉': ['#EAB8B8', '#F1D1D0', '#E2979C', '#CDB0B0', '#D6BCC0', '#E5C1CD', '#F4EBEB'],
+  '复古绿': ['#8FBC8F', '#A3C1AD', '#556B2F', '#6B8E23', '#CADFCD', '#4F7942', '#D0E0D0'],
+  '静谧蓝': ['#B0C4DE', '#ADD8E6', '#87CEFA', '#4682B4', '#5F9EA0', '#778899', '#E0FFFF'],
+  '大地色': ['#D2B48C', '#BC8F8F', '#F4A460', '#DEB887', '#CD853F', '#A0522D', '#FFF5EE'],
+  '高饱和': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#6366f1']
 };
-
-const formatTime = (dateObj) => dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
-const getStartOfWeek = (date) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff));
-};
-const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const DEFAULT_CATEGORIES = [
   { id: 'work', name: '工作', color: '#3b82f6' },
@@ -90,446 +80,1322 @@ const DEFAULT_CATEGORIES = [
   { id: 'sub', name: '并行/副', color: '#a8a29e' },
 ];
 
-const CategoryModal = ({ isOpen, onClose, categories, setCategories, resetCategories }) => {
-  if (!isOpen) return null;
-  const [editingId, setEditingId] = useState(null);
-  const [tempName, setTempName] = useState('');
-  const [tempColor, setTempColor] = useState('#000000');
+const HOURS_DAY_PART = 18;
+const HOURS_NIGHT_PART = 6;
+const HOUR_HEIGHT_DAY = 8;
+const HOUR_HEIGHT_NIGHT = 4;
+const HEIGHT_DAY_MM = HOURS_DAY_PART * HOUR_HEIGHT_DAY;
+const HEIGHT_NIGHT_MM = HOURS_NIGHT_PART * HOUR_HEIGHT_NIGHT;
+const TOTAL_HEIGHT_MM = HEIGHT_DAY_MM + HEIGHT_NIGHT_MM;
 
-  const handleEdit = (cat) => { setEditingId(cat.id); setTempName(cat.name); setTempColor(cat.color); };
-  const handleSave = () => { setCategories(categories.map(c => c.id === editingId ? { ...c, name: tempName, color: tempColor } : c)); setEditingId(null); };
-  const handleAdd = () => { const newCat = { id: generateId(), name: '新分类', color: '#64748b' }; setCategories([...categories, newCat]); handleEdit(newCat); };
-  const handleDelete = (id) => { if (categories.length <= 1) return alert("保留至少一个"); if (confirm("删除?")) setCategories(categories.filter(c => c.id !== id)); };
+// --- 2. Utilities ---
+
+const formatDuration = (seconds) => {
+  if (isNaN(seconds)) return "0h 0m";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}h ${m}m`;
+};
+
+const formatTime = (dateObj) => {
+  return dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
+};
+
+const formatFullTime = (dateObj) => {
+  return dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
+
+const getStartOfWeek = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+};
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+const getCategory = (categories, id) => categories.find(c => c.id === id) || { name: '未知', color: '#cbd5e1' };
+
+const splitTasksAcrossDays = (taskList) => {
+  const segments = [];
+  taskList.forEach(task => {
+    const startTime = new Date(task.startTime);
+    const endTime = new Date(task.endTime);
+    let currentSegmentStart = new Date(startTime);
+
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || startTime >= endTime) return;
+
+    while (currentSegmentStart < endTime) {
+      let logicalDayStart = new Date(currentSegmentStart);
+      if (logicalDayStart.getHours() < 7) {
+        logicalDayStart.setDate(logicalDayStart.getDate() - 1);
+      }
+      logicalDayStart.setHours(7, 0, 0, 0);
+
+      let logicalDayEnd = new Date(logicalDayStart);
+      logicalDayEnd.setDate(logicalDayEnd.getDate() + 1); // Next day 07:00
+
+      let currentSegmentEnd = new Date(Math.min(endTime.getTime(), logicalDayEnd.getTime()));
+
+      if (currentSegmentEnd > currentSegmentStart) {
+        segments.push({
+          ...task,
+          id: `${task.id}_${currentSegmentStart.getTime()}`,
+          startTime: currentSegmentStart.toISOString(),
+          endTime: currentSegmentEnd.toISOString(),
+          duration: (currentSegmentEnd - currentSegmentStart) / 1000,
+          date: logicalDayStart.toISOString().split('T')[0]
+        });
+      }
+      if (currentSegmentEnd.getTime() <= currentSegmentStart.getTime()) break;
+      currentSegmentStart = currentSegmentEnd;
+    }
+  });
+  return segments;
+};
+
+const calculateTopHeight = (task) => {
+  const start = new Date(task.startTime);
+  let h = start.getHours();
+  const m = start.getMinutes();
+  const adjustedH = h < 7 ? h + 24 : h;
+  const hoursFromStart = (adjustedH - 7) + (m / 60);
+  let topMM = 0;
+  let scale = 0;
+  if (hoursFromStart < HOURS_DAY_PART) {
+    topMM = hoursFromStart * HOUR_HEIGHT_DAY;
+    scale = HOUR_HEIGHT_DAY;
+  } else {
+    topMM = HEIGHT_DAY_MM + (hoursFromStart - HOURS_DAY_PART) * HOUR_HEIGHT_NIGHT;
+    scale = HOUR_HEIGHT_NIGHT;
+  }
+  const durationHours = task.duration / 3600;
+  const heightMM = Math.max(durationHours * scale, 1);
+  return { topMM, heightMM };
+};
+
+const getTaskLayout = (dayTasks) => {
+  const placedTasks = [];
+  dayTasks.forEach(task => {
+    const { topMM, heightMM } = calculateTopHeight(task);
+    const bottomMM = topMM + heightMM;
+    const overlaps = placedTasks.filter(p => (topMM < p.topMM + p.heightMM && bottomMM > p.topMM));
+    let colIndex = 0;
+    if (overlaps.length > 0) {
+      const occupiedCols = new Set(overlaps.map(p => p.colIndex));
+      if (!occupiedCols.has(0)) colIndex = 0;
+      else if (!occupiedCols.has(1)) colIndex = 1;
+      else colIndex = 0;
+    }
+    placedTasks.push({ task, topMM, heightMM, colIndex });
+  });
+  return placedTasks;
+};
+
+const getAdaptiveFontSize = (heightMM, text) => {
+  if (!text) return '6px';
+  const len = text.length;
+  const availablePerChar = heightMM / (len || 1);
+  const pxPerChar = availablePerChar * 3.78;
+  let size = Math.min(9, Math.max(5, pxPerChar * 0.8));
+  return `${size}px`;
+};
+
+const getTaskStyle = (layoutItem, categories, isPlan = false) => {
+  const { task, topMM, heightMM, colIndex } = layoutItem;
+  const catId = task.categoryId || task.category?.id;
+  const cat = getCategory(categories, catId);
+  const isOffset = colIndex > 0;
+  return {
+    top: `${topMM}mm`,
+    height: `${heightMM}mm`,
+    backgroundColor: isPlan ? 'transparent' : cat.color,
+    border: isPlan ? `1px dashed ${cat.color}` : 'none',
+    position: 'absolute',
+    left: isOffset ? '50%' : '0%',
+    width: isOffset ? '50%' : '100%',
+    borderRadius: '0.5px',
+    zIndex: 10 + colIndex,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    writingMode: 'vertical-rl',
+    textOrientation: 'upright',
+    overflow: 'hidden',
+    color: isPlan ? cat.color : '#fff',
+    fontSize: getAdaptiveFontSize(heightMM, task.name),
+    lineHeight: '1',
+    letterSpacing: '-0.5px',
+    whiteSpace: 'nowrap',
+    opacity: isPlan ? 0.8 : 1
+  };
+};
+
+const getTasksForDate = (taskList, dateObj) => {
+  const targetDateStr = dateObj.toISOString().split('T')[0];
+  return taskList.filter(t => t.date === targetDateStr).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+};
+
+// --- 3. UI Components ---
+
+const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) => (
+  <div className="flex gap-2 flex-wrap mb-4">
+    {categories.map(cat => (
+      <button
+        key={cat.id}
+        onClick={() => onSelect(cat.id)}
+        style={{
+          borderColor: selectedId === cat.id ? cat.color : 'transparent',
+          backgroundColor: selectedId === cat.id ? `${cat.color}20` : 'transparent',
+          color: selectedId === cat.id ? cat.color : undefined
+        }}
+        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
+          ${selectedId !== cat.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700' : ''}`}
+      >
+        <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: cat.color }}></span>
+        {cat.name}
+      </button>
+    ))}
+    <button
+      onClick={onOpenSettings}
+      className="px-2 py-1.5 rounded-full text-xs font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 transition-colors"
+    >
+      <Settings size={14} />
+    </button>
+  </div>
+);
+
+const StatsInterface = ({ tasks, categories, weekStartStr, weekEndStr }) => {
+  const stats = useMemo(() => {
+    const categoryStats = {};
+    let totalDuration = 0;
+
+    tasks.forEach(task => {
+      if (task.date >= weekStartStr && task.date <= weekEndStr) {
+        const catId = task.categoryId || task.category?.id;
+        if (!categoryStats[catId]) categoryStats[catId] = 0;
+        categoryStats[catId] += task.duration;
+        totalDuration += task.duration;
+      }
+    });
+
+    const data = Object.keys(categoryStats).map(catId => {
+      const cat = getCategory(categories, catId);
+      return {
+        id: catId,
+        name: cat.name,
+        color: cat.color,
+        value: categoryStats[catId],
+        percentage: totalDuration > 0 ? (categoryStats[catId] / totalDuration) * 100 : 0
+      };
+    }).sort((a, b) => b.value - a.value);
+
+    return { data, totalDuration };
+  }, [tasks, categories, weekStartStr, weekEndStr]);
+
+  if (stats.data.length === 0) return (
+    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl rounded-3xl p-6 h-full flex flex-col items-center justify-center text-slate-400">
+      <BarChart2 size={32} className="mb-2 opacity-50" />
+      <span className="text-sm">本周暂无数据</span>
+    </div>
+  );
+
+  let cumulativePercent = 0;
+  const pieSlices = stats.data.map((item, i) => {
+    const startPercent = cumulativePercent;
+    const endPercent = cumulativePercent + item.percentage;
+    cumulativePercent = endPercent;
+
+    const x1 = Math.cos(2 * Math.PI * (startPercent / 100));
+    const y1 = Math.sin(2 * Math.PI * (startPercent / 100));
+    const x2 = Math.cos(2 * Math.PI * (endPercent / 100));
+    const y2 = Math.sin(2 * Math.PI * (endPercent / 100));
+
+    const largeArcFlag = item.percentage > 50 ? 1 : 0;
+
+    const pathData = [
+      `M 0 0`,
+      `L ${x1} ${y1}`,
+      `A 1 1 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+      `Z`
+    ].join(' ');
+
+    return (
+      <path key={item.id} d={pathData} fill={item.color} className="hover:opacity-80 transition-opacity cursor-pointer" title={`${item.name}: ${Math.round(item.percentage)}%`}>
+        <title>{`${item.name}: ${formatDuration(item.value)}`}</title>
+      </path>
+    );
+  });
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl w-80 max-h-[80vh] flex flex-col">
-        <div className="p-3 border-b flex justify-between items-center"><h3 className="font-bold">标签设置</h3><button onClick={onClose}><X size={16} /></button></div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {categories.map(cat => (
-            <div key={cat.id} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-              {editingId === cat.id ? (
-                <>
-                  <input type="color" value={tempColor} onChange={e => setTempColor(e.target.value)} className="w-6 h-6 rounded-full border-none" />
-                  <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} className="flex-1 px-1 py-0.5 text-xs border rounded" autoFocus />
-                  <button onClick={handleSave} className="text-green-500"><Check size={14} /></button>
-                </>
-              ) : (
-                <>
-                  <span className="w-4 h-4 rounded-full" style={{ backgroundColor: cat.color }}></span>
-                  <span className="flex-1 text-xs font-bold">{cat.name}</span>
-                  <button onClick={() => handleEdit(cat)} className="text-slate-400 hover:text-indigo-500"><Edit2 size={14} /></button>
-                  <button onClick={() => handleDelete(cat.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
-                </>
-              )}
+    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl rounded-3xl p-6 h-full flex flex-col no-print w-full">
+      <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2">
+        <PieChart size={18} className="text-indigo-500" /> 本周时间分布
+      </h3>
+
+      <div className="flex flex-col gap-8">
+        <div className="flex items-center justify-center relative h-40">
+          {stats.data.length === 1 ? (
+            <div className="w-32 h-32 rounded-full" style={{ backgroundColor: stats.data[0].color }}></div>
+          ) : (
+            <svg viewBox="-1 -1 2 2" className="w-32 h-32 transform -rotate-90">
+              {pieSlices}
+            </svg>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-full px-2 py-1 shadow-sm">
+              <div className="text-[10px] text-slate-400 font-bold">TOTAL</div>
+              <div className="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">
+                {formatDuration(stats.totalDuration).split(' ')[0]}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto pr-2 max-h-[300px] custom-scrollbar">
+          {stats.data.map(item => (
+            <div key={item.id} className="group">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></span>
+                  {item.name}
+                </span>
+                <span className="font-mono text-slate-500">{formatDuration(item.value)}</span>
+              </div>
+              <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+                ></div>
+              </div>
             </div>
           ))}
-          <button onClick={handleAdd} className="w-full py-1.5 border border-dashed rounded-lg text-xs hover:bg-slate-50 flex justify-center items-center gap-1"><Plus size={14} /> 新增</button>
         </div>
-        <div className="p-2 border-t text-right"><button onClick={resetCategories} className="text-[10px] text-red-400 flex items-center gap-1 ml-auto"><RotateCcw size={10} /> 重置默认</button></div>
       </div>
     </div>
   );
 };
 
-// --- Manual Entry Modal ---
-const ManualEntryModal = ({ isOpen, onClose, categories, onSave }) => {
-  if (!isOpen) return null;
-  const [name, setName] = useState('');
-  const [categoryId, setCategoryId] = useState(categories[0].id);
-  const [startTime, setStartTime] = useState(() => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  });
-  const [duration, setDuration] = useState(30); // minutes
+const StandardStrip = ({ weekDates, processedTasks, categories }) => {
+  return (
+    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '38mm', minHeight: '180mm' }}>
+      <div className="flex w-full pl-[10mm] mb-1">
+        {weekDates.map((dateObj, i) => {
+          const isToday = dateObj.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+          const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
+          return (
+            <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '4mm', height: '8mm' }}>
+              <div className="text-[6px] font-bold text-gray-400 leading-none">{dayLabel}</div>
+              <div className={`text-[7px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
+                {dateObj.getDate()}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex relative w-full border-t border-gray-800">
+        <div className="w-[10mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
+          {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
+            <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
+          ))}
+          <div className="absolute w-full pt-[1px] font-bold text-black" style={{ top: `${HEIGHT_DAY_MM}mm`, height: '0px' }}>1</div>
+          {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => i > 0 && (
+            <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
+          ))}
+        </div>
+        <div className="flex relative" style={{ width: '28mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            {Array.from({ length: HOURS_DAY_PART }).map((_, i) => <div key={`hl-${i}`} className="absolute w-full border-b border-gray-200" style={{ top: `${(i + 1) * HOUR_HEIGHT_DAY}mm` }}></div>)}
+            {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => <div key={`nhl-${i}`} className="absolute w-full border-b border-gray-100" style={{ top: `${HEIGHT_DAY_MM + (i + 1) * HOUR_HEIGHT_NIGHT}mm` }}></div>)}
+            <div className="absolute w-full border-b border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
+            {Array.from({ length: 7 }).map((_, i) => <div key={`vl-${i}`} className="absolute h-full border-r border-gray-100" style={{ left: `${(i + 1) * 4}mm` }}></div>)}
+          </div>
+          {weekDates.map((dateObj, i) => {
+            const dayTasks = getTasksForDate(processedTasks, dateObj);
+            const layout = getTaskLayout(dayTasks);
+            return (
+              <div key={i} className="relative h-full border-r border-gray-200 last:border-0" style={{ width: '4mm' }}>
+                {layout.map((item) => (
+                  <div key={item.task.id} style={getTaskStyle(item, categories)} title={`${item.task.name}`}>
+                    <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="w-full pl-[10mm] mt-1 text-[6px] text-gray-300 font-mono text-center">Actuals Only (38mm)</div>
+    </div>
+  );
+};
 
-  const handleSave = () => {
-    if (!name.trim()) return alert('请输入任务名称');
-    const start = new Date(startTime);
-    const durationSec = duration * 60;
-    const task = {
-      id: generateId(),
-      name,
-      categoryId,
-      startTime: start.toISOString(),
-      endTime: new Date(start.getTime() + durationSec * 1000).toISOString(),
-      duration: durationSec,
-      date: start.toISOString().split('T')[0],
-      isManual: true
-    };
-    onSave(task);
-    onClose();
-    // Reset form slightly for next use
-    setName('');
+const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories }) => {
+  return (
+    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '66mm', minHeight: '180mm' }}>
+      <div className="flex w-full pl-[10mm] mb-1">
+        {weekDates.map((dateObj, i) => {
+          const isToday = dateObj.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+          const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
+          return (
+            <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '8mm', height: '8mm' }}>
+              <div className="text-[6px] font-bold text-gray-400 leading-none">{dayLabel}</div>
+              <div className={`text-[7px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
+                {dateObj.getDate()}
+              </div>
+              <div className="flex justify-between px-[1mm] mt-[1px]">
+                <span className="text-[4px] text-gray-300">P</span>
+                <span className="text-[4px] text-gray-300">A</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex relative w-full border-t border-gray-800">
+        <div className="w-[10mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
+          {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
+            <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
+          ))}
+          <div className="absolute w-full pt-[1px] font-bold text-black" style={{ top: `${HEIGHT_DAY_MM}mm`, height: '0px' }}>1</div>
+          {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => i > 0 && (
+            <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
+          ))}
+        </div>
+        <div className="flex relative" style={{ width: '56mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            {Array.from({ length: HOURS_DAY_PART }).map((_, i) => <div key={`hl-${i}`} className="absolute w-full border-b border-gray-200" style={{ top: `${(i + 1) * HOUR_HEIGHT_DAY}mm` }}></div>)}
+            {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => <div key={`nhl-${i}`} className="absolute w-full border-b border-gray-100" style={{ top: `${HEIGHT_DAY_MM + (i + 1) * HOUR_HEIGHT_NIGHT}mm` }}></div>)}
+            <div className="absolute w-full border-b border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
+            {Array.from({ length: 7 }).map((_, i) => <div key={`vl-${i}`} className="absolute h-full border-r border-gray-200" style={{ left: `${(i + 1) * 8}mm` }}></div>)}
+            {Array.from({ length: 7 }).map((_, i) => <div key={`vld-${i}`} className="absolute h-full border-r border-dotted border-gray-100" style={{ left: `${(i) * 8 + 4}mm` }}></div>)}
+          </div>
+          {weekDates.map((dateObj, i) => {
+            const dayPlans = getTasksForDate(processedPlans, dateObj);
+            const planLayout = getTaskLayout(dayPlans);
+            const dayActuals = getTasksForDate(processedTasks, dateObj);
+            const actualLayout = getTaskLayout(dayActuals);
+            return (
+              <div key={i} className="flex h-full border-r border-gray-200 last:border-0" style={{ width: '8mm' }}>
+                <div className="relative h-full border-r border-dotted border-gray-100" style={{ width: '4mm' }}>
+                  {planLayout.map((item) => (
+                    <div key={item.task.id} style={getTaskStyle(item, categories, true)} title={`Plan: ${item.task.name}`}>
+                      <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="relative h-full" style={{ width: '4mm' }}>
+                  {actualLayout.map((item) => (
+                    <div key={item.task.id} style={getTaskStyle(item, categories, false)} title={`Actual: ${item.task.name}`}>
+                      <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="w-full pl-[10mm] mt-1 text-[6px] text-gray-300 font-mono text-center">Plan vs Actual (66mm)</div>
+    </div>
+  );
+};
+
+const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories, openManualModal }) => {
+  const [showStandard, setShowStandard] = useState(true);
+  const [showPlanActual, setShowPlanActual] = useState(true);
+
+  const processedTasks = useMemo(() => splitTasksAcrossDays(tasks), [tasks]);
+  const processedPlans = useMemo(() => splitTasksAcrossDays(plans), [plans]);
+
+  const startOfWeek = getStartOfWeek(viewDate);
+  const weekDates = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+
+  const weekStartStr = weekDates[0].toISOString().split('T')[0];
+  const weekEndStr = weekDates[6].toISOString().split('T')[0];
+
+  const moveWeek = (offset) => {
+    const d = new Date(viewDate);
+    d.setDate(d.getDate() + (offset * 7));
+    setViewDate(d.toISOString().split('T')[0]);
   };
 
+  const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
+  const btnSecondary = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all active:scale-[0.98]";
+  const btnPrimary = "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/50 transition-all active:scale-[0.98]";
+
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl w-80 p-4 shadow-xl border border-slate-200 dark:border-slate-700">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">补登专注记录</h3>
-          <button onClick={onClose}><X size={18} className="text-slate-400" /></button>
+    <div className="w-full">
+      <div className={`no-print w-full flex flex-wrap gap-4 items-center justify-between mb-8 p-6 rounded-3xl ${glassCard}`}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1">
+            <button onClick={() => moveWeek(-1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronLeft size={16} /></button>
+            <span className="px-3 text-sm font-mono font-medium text-slate-600 dark:text-slate-300">{weekStartStr} ~ {weekEndStr}</span>
+            <button onClick={() => moveWeek(1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronRight size={16} /></button>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-600/50 pl-4 ml-2">
+            <button onClick={() => setShowStandard(!showStandard)} className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${showStandard ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+              {showStandard ? <Eye size={14} /> : <EyeOff size={14} />} 极简版
+            </button>
+            <button onClick={() => setShowPlanActual(!showPlanActual)} className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${showPlanActual ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+              {showPlanActual ? <Eye size={14} /> : <EyeOff size={14} />} 计划实绩版
+            </button>
+          </div>
         </div>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-bold text-slate-500 block mb-1">任务名称</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full text-sm border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-700 outline-none focus:border-indigo-500" autoFocus />
+        <div className="flex gap-2">
+          <button onClick={openManualModal} className={`${btnSecondary} flex items-center gap-2 px-4 py-2 rounded-xl text-sm`}><Plus size={16} /> 补登/计划</button>
+          <button onClick={() => window.print()} className={`${btnPrimary} flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold`}><Printer size={16} /> 打印</button>
+        </div>
+      </div>
+
+      <div className="flex gap-8 items-start">
+        <div className="print-area flex justify-center flex-1">
+          <PrintStyles />
+          {showStandard && <StandardStrip weekDates={weekDates} processedTasks={processedTasks} categories={categories} />}
+          {showPlanActual && <div className="ml-8"><PlanActualStrip weekDates={weekDates} processedTasks={processedTasks} processedPlans={processedPlans} categories={categories} /></div>}
+        </div>
+      </div>
+
+      <div className="no-print w-full text-center text-sm text-gray-400 mt-4 pb-12">
+        打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
+      </div>
+    </div>
+  );
+};
+
+const TimerInterface = ({
+  isMiniMode, setIsMiniMode, isDarkMode, setIsDarkMode, currentTime, elapsed,
+  currentTask, taskName, setTaskName, startTimer, stopTimer, adjustStartTime,
+  categories, selectedCategoryId, setSelectedCategoryId, openManualModal, setIsCategoryModalOpen,
+  subElapsed, currentSubTask, subTaskName, setSubTaskName, startSubTimer, stopSubTimer,
+  togglePiP, isPiPActive
+}) => {
+  const currentCat = currentTask ? getCategory(categories, currentTask.categoryId) : null;
+  const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
+  const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
+  const btnPrimary = "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/50 transition-all active:scale-[0.98]";
+  const btnSecondary = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all active:scale-[0.98]";
+
+  // Dragging logic for in-page mini mode
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    // Set initial position based on window size if mini mode starts
+    if (isMiniMode && !isPiPActive) {
+      setPosition({ x: window.innerWidth - 360, y: window.innerHeight - 500 });
+    }
+  }, [isMiniMode, isPiPActive]);
+
+  const handlePointerDown = (e) => {
+    if (!isMiniMode || isPiPActive) return;
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    setIsDragging(true);
+    const rect = dragRef.current.getBoundingClientRect();
+    offsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handlePointerMove = (e) => {
+      if (!isDragging) return;
+      setPosition({
+        x: e.clientX - offsetRef.current.x,
+        y: e.clientY - offsetRef.current.y
+      });
+    };
+    const handlePointerUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+    }
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [isDragging]);
+
+  const miniModeStyle = isMiniMode && !isPiPActive ? {
+    position: 'fixed',
+    left: position.x,
+    top: position.y,
+    width: '340px',
+    zIndex: 50,
+    cursor: isDragging ? 'grabbing' : 'auto'
+  } : {};
+
+  return (
+    <div
+      ref={dragRef}
+      onPointerDown={handlePointerDown}
+      style={miniModeStyle}
+      className={`transition-shadow duration-300 ease-out flex flex-col ${glassCard} overflow-hidden h-fit 
+        ${!isMiniMode && !isPiPActive ? 'relative w-full rounded-3xl' : 'rounded-2xl shadow-2xl'} 
+        ${isPiPActive ? 'h-screen w-screen rounded-none' : ''}
+        no-print`}
+    >
+
+      {/* Header */}
+      <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 ${isMiniMode || isPiPActive ? 'p-3 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing' : 'p-6'}`}>
+        <div className="flex items-center gap-3">
+          {isMiniMode && !isPiPActive && <Move size={14} className="text-slate-400 mr-1" />}
+          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <Clock size={18} />
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 block mb-1">分类</label>
-            <div className="flex flex-wrap gap-2">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">TimeFlow</div>
+            <div className="font-mono text-xl font-bold text-slate-800 dark:text-white leading-none tracking-tight">
+              {formatFullTime(currentTime)}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2" onPointerDown={e => e.stopPropagation()}>
+          {!isPiPActive && window.documentPictureInPicture && (
+            <button
+              onClick={togglePiP}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors"
+              title="独立悬浮窗 (Always on Top)"
+            >
+              <PictureInPicture2 size={18} />
+            </button>
+          )}
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors">
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          {!isPiPActive && (
+            <button onClick={() => setIsMiniMode(!isMiniMode)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors">
+              {isMiniMode ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-8 pb-10'}`}>
+        <div className="text-center mb-8 relative group">
+          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
+            {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
+            <span className={`text-sm font-medium text-slate-400 ml-2 ${isMiniMode || isPiPActive ? 'block mt-[-5px]' : ''}`}>
+              {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
+            </span>
+          </div>
+          {currentTask && (
+            <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-xl">
+              <button onClick={() => adjustStartTime(5)} className="px-3 py-1 bg-white dark:bg-slate-800 shadow-md rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:scale-105 transition-transform">-5m</button>
+              <button onClick={() => adjustStartTime(-5)} className="px-3 py-1 bg-white dark:bg-slate-800 shadow-md rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:scale-105 transition-transform">+5m</button>
+            </div>
+          )}
+          {currentTask && (
+            <div className="flex items-center justify-center gap-2 mt-4 animate-fade-in">
+              <div className="h-1.5 w-1.5 rounded-full animate-ping" style={{ backgroundColor: currentCat.color }}></div>
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                {currentTask.name}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-5">
+          {!currentTask ? (
+            <div className="animate-fade-in-up">
+              <CategorySelector
+                categories={categories}
+                selectedId={selectedCategoryId}
+                onSelect={setSelectedCategoryId}
+                onOpenSettings={() => setIsCategoryModalOpen(true)}
+              />
+              <div className="flex gap-3 mt-4">
+                <input
+                  type="text"
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
+                  placeholder="主任务..."
+                  className={`flex-1 px-5 py-4 text-lg ${inputStyle}`}
+                  onKeyDown={(e) => e.key === 'Enter' && startTimer()}
+                />
+                <button onClick={openManualModal} className={`${btnSecondary} px-4 rounded-xl`} title="补登">
+                  <Edit2 size={20} />
+                </button>
+              </div>
+              <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full mt-4 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${btnPrimary} disabled:opacity-50`}>
+                <Play size={20} fill="currentColor" /> 开始专注
+              </button>
+            </div>
+          ) : (
+            <button onClick={stopTimer} className="w-full py-5 rounded-xl font-bold text-lg flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white shadow-lg transition-all active:scale-[0.98]">
+              <Square size={20} fill="currentColor" /> 完成主任务
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Sub Task Panel */}
+      <div className="bg-slate-50/80 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/50 p-5 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <Zap size={14} className={currentSubTask ? "text-amber-500 fill-amber-500" : ""} />
+            副任务
+          </div>
+          {currentSubTask && <div className="text-xs font-mono text-slate-400">进行中...</div>}
+        </div>
+        <div className="flex items-center gap-5">
+          <div className={`font-mono font-bold ${currentSubTask ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600'} text-3xl min-w-[90px] text-center`}>
+            {formatDuration(subElapsed).replace('h ', ':').replace('m', '')}
+          </div>
+          <div className="flex-1">
+            {!currentSubTask ? (
+              <div className="flex gap-2">
+                <input type="text" value={subTaskName} onChange={(e) => setSubTaskName(e.target.value)} placeholder="并行任务..." className={`flex-1 px-4 py-2.5 text-sm ${inputStyle}`} onKeyDown={(e) => e.key === 'Enter' && startSubTimer()} />
+                <button onClick={startSubTimer} className={`${btnSecondary} px-4 rounded-xl font-bold`}><Play size={16} fill="currentColor" /></button>
+              </div>
+            ) : (
+              <div className="flex gap-3 items-center bg-white dark:bg-slate-800 p-2 pr-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex-1 text-sm font-bold text-slate-700 dark:text-slate-200 truncate pl-2">{currentSubTask.name}</div>
+                <button onClick={stopSubTimer} className="px-4 py-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-200 rounded-lg text-xs font-bold flex items-center gap-1"><Square size={12} fill="currentColor" /> 结束</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, categories, applyColorPalette, updateCategory, removeCategory, addCategory, resetCategories }) => {
+  if (!isCategoryModalOpen) return null;
+
+  const applyPalette = (paletteName) => {
+    const colors = COLOR_PALETTES[paletteName];
+    if (!colors) return;
+    categories.forEach((cat, index) => {
+      if (colors[index % colors.length]) {
+        updateCategory(cat.id, 'color', colors[index % colors.length]);
+      }
+    });
+  };
+
+  const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4 no-print">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-slate-100 dark:border-slate-700">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+          <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <Settings size={18} /> 分类管理
+          </h3>
+          <button onClick={() => setIsCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+        </div>
+
+        <div className="px-4 pt-4">
+          <div className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">快捷配色方案 (点击应用)</div>
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(COLOR_PALETTES).map(name => (
+              <button
+                key={name}
+                onClick={() => applyPalette(name)}
+                className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-4 max-h-[50vh] overflow-y-auto">
+          <div className="space-y-3">
+            {categories.map(cat => (
+              <div key={cat.id} className="flex items-center gap-3">
+                <input type="color" value={cat.color} onChange={(e) => updateCategory(cat.id, 'color', e.target.value)} className="w-8 h-8 p-0 border-0 rounded-lg cursor-pointer flex-shrink-0 bg-transparent" />
+                <input type="text" value={cat.name} onChange={(e) => updateCategory(cat.id, 'name', e.target.value)} className={`flex-1 px-3 py-2 text-sm ${inputStyle}`} />
+                <button onClick={() => removeCategory(cat.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"><Trash2 size={16} /></button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-2">
+            <button onClick={addCategory} className="flex-1 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg text-sm font-medium flex items-center justify-center gap-1 transition-colors"><Plus size={16} /> 添加新分类</button>
+            <button onClick={resetCategories} className="px-3 py-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm transition-colors"><RotateCcw size={16} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm, setManualForm, saveManualEntry, categories }) => {
+  if (!isManualModalOpen) return null;
+  const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
+  return (
+    <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4 no-print">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-slate-100 dark:border-slate-700">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+          <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <Edit2 size={18} /> 补登 / 计划
+          </h3>
+          <button onClick={() => setIsManualModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl mb-4">
+            <button onClick={() => setManualForm({ ...manualForm, type: 'actual' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${manualForm.type === 'actual' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500'}`}>实绩记录 (Actual)</button>
+            <button onClick={() => setManualForm({ ...manualForm, type: 'plan' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${manualForm.type === 'plan' ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500'}`}>计划预定 (Plan)</button>
+          </div>
+          <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">日期</label><input type="date" value={manualForm.date} onChange={e => setManualForm({ ...manualForm, date: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">开始时间</label><input type="time" value={manualForm.startTime} onChange={e => setManualForm({ ...manualForm, startTime: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
+            <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">结束时间</label><input type="time" value={manualForm.endTime} onChange={e => setManualForm({ ...manualForm, endTime: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">分类</label>
+            <div className="flex gap-2 flex-wrap">
               {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategoryId(cat.id)}
-                  className={`px-2 py-1 rounded text-xs border ${categoryId === cat.id ? 'ring-1 ring-offset-1' : 'opacity-70 hover:opacity-100'}`}
-                  style={{ backgroundColor: cat.color, borderColor: cat.color, color: 'white' }}
-                >
+                <button key={cat.id} onClick={() => setManualForm({ ...manualForm, categoryId: cat.id })} style={{ borderColor: manualForm.categoryId === cat.id ? cat.color : 'transparent', backgroundColor: manualForm.categoryId === cat.id ? `${cat.color}20` : 'transparent', color: manualForm.categoryId === cat.id ? cat.color : '#64748b' }} className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 ${manualForm.categoryId !== cat.id ? 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700' : ''}`}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
                   {cat.name}
                 </button>
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs font-bold text-slate-500 block mb-1">开始时间</label>
-              <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full text-xs border rounded px-1 py-1.5 dark:bg-slate-900 dark:border-slate-700" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 block mb-1">时长 (分钟)</label>
-              <input type="number" min="1" value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full text-xs border rounded px-2 py-1.5 dark:bg-slate-900 dark:border-slate-700" />
-            </div>
-          </div>
-          <button onClick={handleSave} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg mt-2 flex items-center justify-center gap-2">
-            <Check size={16} /> 确认补登
-          </button>
+          <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">任务名称</label><input type="text" value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} placeholder="做了什么？" className={`w-full p-3 ${inputStyle}`} /></div>
+          <button onClick={saveManualEntry} className={`w-full py-3 text-white rounded-xl font-bold mt-4 flex justify-center gap-2 shadow-lg transition-transform active:scale-[0.98] ${manualForm.type === 'plan' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'}`}><Save size={18} /> {manualForm.type === 'plan' ? '保存计划' : '保存实绩'}</button>
         </div>
       </div>
     </div>
   );
 };
 
-const TimerContainer = ({ currentTask, taskName, setTaskName, selectedCategoryId, setSelectedCategoryId, categories, startTimer, stopTimer, elapsed, currentSubTask, subTaskName, setSubTaskName, startSubTimer, stopSubTimer, subElapsed, isMiniMode, togglePiP, onOpenSettings }) => {
-  const currentCat = currentTask ? categories.find(c => c.id === currentTask.categoryId) : null;
-  return (
-    <div className={`transition-all duration-300 ${isMiniMode ? 'fixed top-0 left-0 w-full h-full bg-white dark:bg-slate-900 p-2 flex flex-col overflow-hidden' : ''} no-print`}>
-      <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-all mb-4 ${isMiniMode ? 'shadow-none border-none p-1 mb-1 rounded-xl flex-1 flex flex-col justify-center' : ''}`}>
-        <div className="flex justify-between items-center mb-2">
-          <h2 className={`font-bold text-slate-400 uppercase tracking-wider ${isMiniMode ? 'hidden' : 'text-sm'}`}>主任务</h2>
-          <button onClick={togglePiP} className="text-slate-400 hover:text-indigo-500 ml-auto" title="PiP">{isMiniMode ? <Maximize2 size={14} /> : <Minimize2 size={16} />}</button>
-        </div>
-        {!currentTask ? (
-          <div className={`space-y-4 ${isMiniMode ? 'space-y-2' : ''}`}>
-            <input type="text" placeholder="专注内容..." className={`w-full font-medium bg-transparent border-b-2 focus:border-indigo-500 outline-none px-1 py-1 ${isMiniMode ? 'text-sm border-slate-100' : 'text-2xl border-slate-200'}`} value={taskName} onChange={(e) => setTaskName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && startTimer()} />
-            {!isMiniMode ? (
-              <div className="flex gap-2 flex-wrap mb-3">
-                {categories.map(cat => (
-                  <button key={cat.id} onClick={() => setSelectedCategoryId(cat.id)} style={{ borderColor: selectedCategoryId === cat.id ? cat.color : 'transparent', backgroundColor: selectedCategoryId === cat.id ? `${cat.color}20` : 'transparent', color: selectedCategoryId === cat.id ? cat.color : '#64748b' }} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${selectedCategoryId !== cat.id ? 'bg-slate-50 border-slate-200' : ''}`}><span className="w-2 h-2 rounded-full inline-block mr-1" style={{ backgroundColor: cat.color }}></span>{cat.name}</button>
-                ))}
-                <button onClick={onOpenSettings} className="px-2 py-1 rounded-full text-xs bg-slate-100 hover:bg-slate-200"><Settings size={14} /></button>
-              </div>
-            ) : (
-              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
-                {categories.map(cat => (<div key={cat.id} onClick={() => setSelectedCategoryId(cat.id)} className={`w-3 h-3 flex-shrink-0 rounded-full cursor-pointer border ${selectedCategoryId === cat.id ? 'ring-1 ring-slate-400' : 'border-transparent'}`} style={{ backgroundColor: cat.color }} />))}
-              </div>
-            )}
-            <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 ${isMiniMode ? 'py-2 text-sm' : 'py-4 text-lg'}`}><Play fill="currentColor" size={isMiniMode ? 12 : 24} /> {isMiniMode ? 'Go' : '开始专注'}</button>
-          </div>
-        ) : (
-          <div className="text-center">
-            <div className={`font-bold text-slate-800 dark:text-white truncate ${isMiniMode ? 'text-base mb-1' : 'text-3xl mb-2'}`}>{currentTask.name}</div>
-            <div className="text-xs text-slate-400 mb-2 flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentCat?.color || '#ccc' }}></span>{currentCat?.name || '未知'}</div>
-            <div className={`font-mono font-bold tracking-tighter tabular-nums ${isMiniMode ? 'text-4xl mb-2' : 'text-7xl mb-6'}`}>{formatDuration(elapsed)}</div>
-            <button onClick={stopTimer} className={`w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-500 rounded-xl font-bold flex items-center justify-center gap-2 group ${isMiniMode ? 'py-1.5 text-xs' : 'py-4 text-lg'}`}><Square fill="currentColor" size={isMiniMode ? 12 : 20} className="group-hover:scale-90" /> {isMiniMode ? 'Stop' : '结束任务'}</button>
-          </div>
-        )}
-      </div>
-      <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 ${isMiniMode ? 'border-none p-1 bg-transparent' : ''}`}>
-        {!currentSubTask ? (
-          <div className="flex gap-2">
-            <input type="text" placeholder="并行..." className="flex-1 text-xs bg-white dark:bg-slate-800 border rounded-lg px-2 py-1 outline-none" value={subTaskName} onChange={(e) => setSubTaskName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && startSubTimer()} />
-            <button onClick={startSubTimer} className="p-1.5 bg-slate-200 rounded-lg"><Play size={12} fill="currentColor" /></button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between bg-white p-2 rounded-xl border shadow-sm">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0"><Layers size={10} className="text-orange-500" /></div>
-              <div className="min-w-0"><div className="text-xs font-bold truncate">{currentSubTask.name}</div><div className="text-[10px] font-mono text-slate-500">{formatDuration(subElapsed)}</div></div>
-            </div>
-            <button onClick={stopSubTimer} className="p-1 text-slate-400 hover:text-red-500"><Square size={12} fill="currentColor" /></button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const WeeksLayout = ({ viewDate, tasks, categories, onOpenManualEntry }) => {
-  const currentDate = new Date(viewDate);
-  const startOfWeek = getStartOfWeek(currentDate);
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(endOfWeek.getDate() + 6);
-
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(startOfWeek);
-    d.setDate(d.getDate() + i);
-    const rangeStart = new Date(d); rangeStart.setHours(7, 0, 0, 0);
-    const rangeEnd = new Date(d); rangeEnd.setDate(d.getDate() + 1); rangeEnd.setHours(7, 0, 0, 0);
-    const dayTasks = tasks.filter(t => { const tStart = new Date(t.startTime); return tStart >= rangeStart && tStart < rangeEnd; });
-    return { date: d.toISOString().split('T')[0], dayName: ['日', '一', '二', '三', '四', '五', '六'][d.getDay()], dayNum: d.getDate(), tasks: dayTasks, totalDuration: dayTasks.reduce((acc, t) => acc + t.duration, 0) };
-  });
-
-  const totalWeekDuration = weekDays.reduce((acc, day) => acc + day.totalDuration, 0);
-  const categoryStats = categories.map(cat => ({
-    ...cat, duration: tasks.filter(t => new Date(t.startTime) >= startOfWeek && new Date(t.startTime) <= endOfWeek && t.categoryId === cat.id).reduce((acc, t) => acc + t.duration, 0)
-  })).filter(c => c.duration > 0);
-  const maxCatDuration = Math.max(...categoryStats.map(c => c.duration), 1);
-
-  // Position Helpers (Strict 4mm)
-  // Rows 0-17 (7am-0am) -> 2 cells/hr
-  // Rows 18-41 (0am-7am) -> ? User said 7am-1am=36cells, 1am-7am=6cells.
-  // 7am-1am (18 hours) * 2 = 36 cells.
-  // 1am-7am (6 hours) * 1 = 6 cells.
-  // Total 42 cells. Each cell 4mm.
-  const getPosition = (start, durationSec) => {
-    let h = start.getHours();
-    let m = start.getMinutes();
-    // Normalize to minutes from 07:00
-    let minsFrom7 = (h >= 7) ? (h - 7) * 60 + m : (17 + h) * 60 + m;
-
-    const mapMinsToCells = (min) => {
-      if (min <= 18 * 60) return min / 30; // 2 cells/hr
-      return 36 + (min - 18 * 60) / 60; // 1 cell/hr
-    };
-
-    const startCell = mapMinsToCells(minsFrom7);
-    const endCell = mapMinsToCells(minsFrom7 + durationSec / 60);
-
-    // Top px = startCell * 4mm
-    // Height px = (endCell - startCell) * 4mm
-    return { top: `${startCell * 4}mm`, height: `${Math.max((endCell - startCell) * 4, 2)}mm` };
-  };
-
-  return (
-    <div className="print-area flex flex-row">
-      {/* --- LEFT: TIMELINE STRIP (Strict 28mm wide grid + Axis) --- */}
-      <div className="flex-shrink-0 pt-[10mm] mr-4 h-full relative" style={{ marginLeft: '5mm', marginRight: '5mm' }}>
-        <div className="flex h-full">
-          {/* Axis */}
-          <div className="w-8 flex-shrink-0 flex flex-col mr-1">
-            {/* Spacer to match Header height exactly (including border thickness) */}
-            <div className="h-[10mm] border-b border-transparent mb-[1px]" />
-
-            <div className="relative w-full h-[168mm]">
-              {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map((h, i) => {
-                // Y position in cells
-                let cellY = i < 18 ? i * 2 : 36 + (i - 18);
-                return (
-                  <div key={i} className="absolute w-full text-right text-[8px] text-slate-400 font-mono leading-none border-t border-slate-200 pr-1"
-                    style={{ top: `${cellY * 4}mm`, height: i < 18 ? '8mm' : '4mm' }}>
-                    <span className="-translate-y-1/2 block">{h}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* The 28mm Strip */}
-          <div className="flex flex-col w-[28mm]">
-            {/* Header */}
-            <div className="flex h-[10mm] border-b border-black items-end pb-1 mb-[1px]">
-              {weekDays.map(day => (
-                <div key={day.date} className="w-[4mm] text-center flex flex-col justify-end">
-                  <div className="text-[6px] text-slate-500 uppercase leading-none scale-75">{day.dayName}</div>
-                  <div className="font-bold text-[8px] leading-none">{day.dayNum}</div>
-                </div>
-              ))}
-            </div>
-            {/* Grid */}
-            <div className="relative w-[28mm] h-[168mm] border-t border-slate-200 border-r border-slate-300">
-              {/* BG Grid Lines (42 Rows) */}
-              {Array.from({ length: 42 }).map((_, i) => (
-                <div key={i} className="absolute w-full border-b border-slate-100 box-border" style={{ top: `${(i + 1) * 4}mm`, height: '0' }}></div>
-              ))}
-              {/* BG Cols (7 Cols) */}
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="absolute h-full border-r border-slate-100 box-border" style={{ left: `${(i + 1) * 4}mm`, width: '0' }}></div>
-              ))}
-
-              {/* Columns & Tasks */}
-              <div className="absolute inset-0 flex">
-                {weekDays.map(day => (
-                  <div key={day.date} className="w-[4mm] relative h-full border-r border-slate-200 box-border">
-                    {day.tasks.map(t => {
-                      const pos = getPosition(new Date(t.startTime), t.duration);
-                      const cat = categories.find(c => c.id === t.categoryId) || { color: '#ccc' };
-                      return (
-                        <div key={t.id}
-                          className="absolute left-[0.2mm] right-[0.2mm] rounded-[1px] overflow-hidden flex items-center justify-center border border-white/30"
-                          style={{ top: pos.top, height: pos.height, backgroundColor: cat.color, zIndex: 10 }}
-                        >
-                          <span className="text-white text-[3px] font-bold tracking-tight opacity-90 block"
-                            style={{ writingMode: 'vertical-rl', textOrientation: 'upright', maxHeight: '100%' }}>
-                            {t.name.slice(0, 3)}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* --- RIGHT: DASHBOARD (Fills remaining space) --- */}
-      <div className="flex-1 flex flex-col pt-[10mm] pr-[10mm] h-full">
-        {/* Top Header */}
-        <div className="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-6">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight text-slate-800">{startOfWeek.getFullYear()}</h1>
-              <div className="text-sm text-slate-500 font-mono tracking-widest uppercase">Weekly Report</div>
-            </div>
-            <button onClick={onOpenManualEntry} className="mb-2 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold flex items-center gap-1 no-print" title="补登记录">
-              <Plus size={12} /> 补登
-            </button>
-          </div>
-          <div className="text-right">
-            <div className="text-xl font-bold">{startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}</div>
-            <div className="text-xs text-slate-400">Total Focus: {formatDuration(totalWeekDuration)}</div>
-          </div>
-        </div>
-
-        {/* Canvas Area split into Stats and Memo */}
-        <div className="flex-1 flex flex-col gap-6">
-          {/* Visual Stats Chart */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 print:border-slate-200">
-            <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><BarChart2 size={16} /> CATEGORY BREAKDOWN</h3>
-            <div className="flex gap-4 items-end h-[40mm]">
-              {categoryStats.map(cat => {
-                const hPct = (cat.duration / maxCatDuration) * 100;
-                return (
-                  <div key={cat.id} className="flex-1 flex flex-col items-center gap-1 group">
-                    <div className="text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity mb-auto">{formatDuration(cat.duration)}</div>
-                    <div className="w-full bg-slate-200 rounded-t-sm relative overflow-hidden transition-all hover:brightness-95" style={{ height: `${Math.max(hPct, 2)}%` }}>
-                      <div className="absolute inset-0 opacity-80" style={{ backgroundColor: cat.color }}></div>
-                    </div>
-                    <div className="text-[10px] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center text-slate-500 font-medium">{cat.name}</div>
-                  </div>
-                )
-              })}
-              {categoryStats.length === 0 && <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No data recorded</div>}
-            </div>
-          </div>
-
-          {/* Memo Area */}
-          <div className="flex-1 flex flex-col">
-            <h3 className="font-bold text-sm mb-2 flex items-center gap-2 text-slate-400">MEMO & ANALYSIS</h3>
-            <div
-              className="flex-1 border border-slate-200 rounded-xl p-4 text-xs leading-relaxed outline-none focus:ring-1 focus:ring-slate-300 text-slate-700 resize-none font-sans grid-pattern-4mm bg-white"
-              contentEditable
-              suppressContentEditableWarning
-            >
-              Write your weekly review here...
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100 text-[10px] text-slate-300">
-            <div>TimeFlow Weeks • Generated Report</div>
-            <div className="font-mono">4mm Grid System v5.0</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default function App() {
+// Main App Component
+function App() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [tasks, setTasks] = useState([]);
+  const [plans, setPlans] = useState([]);
+
   const [currentTask, setCurrentTask] = useState(null);
   const [taskName, setTaskName] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORIES[0].id);
+
   const [currentSubTask, setCurrentSubTask] = useState(null);
   const [subTaskName, setSubTaskName] = useState('');
   const [subElapsed, setSubElapsed] = useState(0);
+
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isManualEntryModalOpen, setIsManualEntryModalOpen] = useState(false);
+
+  // PiP State
+  const [pipWindow, setPipWindow] = useState(null);
+
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    date: new Date().toISOString().split('T')[0],
+    startTime: '09:00',
+    endTime: '10:00',
+    categoryId: DEFAULT_CATEGORIES[0].id,
+    type: 'actual'
+  });
+
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
   const timerRef = useRef(null);
   const subTimerRef = useRef(null);
-  const pipWindowRef = useRef(null);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem('timeflow_categories')) setCategories(JSON.parse(localStorage.getItem('timeflow_categories')));
-      if (localStorage.getItem('timeflow_tasks')) setTasks(JSON.parse(localStorage.getItem('timeflow_tasks')));
-      if (localStorage.getItem('timeflow_current')) setCurrentTask(JSON.parse(localStorage.getItem('timeflow_current')));
-      if (localStorage.getItem('timeflow_sub_current')) setCurrentSubTask(JSON.parse(localStorage.getItem('timeflow_sub_current')));
-    } catch (e) { console.error(e); }
+    const clockInterval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(clockInterval);
   }, []);
 
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDarkMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      if (pipWindow) pipWindow.document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      if (pipWindow) pipWindow.document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode, pipWindow]);
+
+  // Load Data
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('timeflow_categories');
+    if (savedCategories) setCategories(JSON.parse(savedCategories));
+
+    const savedTasks = localStorage.getItem('timeflow_tasks');
+    if (savedTasks) setTasks(JSON.parse(savedTasks));
+
+    const savedPlans = localStorage.getItem('timeflow_plans');
+    if (savedPlans) setPlans(JSON.parse(savedPlans));
+
+    const savedCurrent = localStorage.getItem('timeflow_current');
+    if (savedCurrent) {
+      const parsed = JSON.parse(savedCurrent);
+      setCurrentTask(parsed);
+      setTaskName(parsed.name);
+      if (parsed.categoryId) setSelectedCategoryId(parsed.categoryId);
+    }
+
+    const savedSub = localStorage.getItem('timeflow_sub_current');
+    if (savedSub) {
+      const parsed = JSON.parse(savedSub);
+      setCurrentSubTask(parsed);
+      setSubTaskName(parsed.name);
+    }
+  }, []);
+
+  // Save Data
   useEffect(() => { localStorage.setItem('timeflow_tasks', JSON.stringify(tasks)); }, [tasks]);
+  useEffect(() => { localStorage.setItem('timeflow_plans', JSON.stringify(plans)); }, [plans]);
   useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask)); else localStorage.removeItem('timeflow_current'); }, [currentTask]);
-  useEffect(() => { if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask)); else localStorage.removeItem('timeflow_sub_current'); }, [currentSubTask]);
 
-  useEffect(() => { if (currentTask) { const calc = () => setElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentTask.startTime).getTime()) / 1000))); calc(); timerRef.current = setInterval(calc, 1000); } else { clearInterval(timerRef.current); setElapsed(0); } return () => clearInterval(timerRef.current); }, [currentTask]);
-  useEffect(() => { if (currentSubTask) { const calc = () => setSubElapsed(Math.max(0, Math.floor((Date.now() - new Date(currentSubTask.startTime).getTime()) / 1000))); calc(); subTimerRef.current = setInterval(calc, 1000); } else { clearInterval(subTimerRef.current); setSubElapsed(0); } return () => clearInterval(subTimerRef.current); }, [currentSubTask]);
+  useEffect(() => {
+    if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask));
+    else localStorage.removeItem('timeflow_current');
+  }, [currentTask]);
 
-  const startTimer = () => { if (!taskName.trim()) return; setCurrentTask({ id: generateId(), name: taskName, startTime: new Date().toISOString(), duration: 0, categoryId: selectedCategoryId }); };
-  const stopTimer = () => { if (!currentTask) return; setTasks([{ ...currentTask, endTime: new Date().toISOString(), duration: elapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentTask(null); setTaskName(''); setElapsed(0); };
-  const startSubTimer = () => { if (!subTaskName.trim()) return; setCurrentSubTask({ id: generateId(), name: subTaskName, startTime: new Date().toISOString(), duration: 0, categoryId: (categories.find(c => c.id === 'sub') || categories[0]).id }); };
-  const stopSubTimer = () => { if (!currentSubTask) return; setTasks([{ ...currentSubTask, endTime: new Date().toISOString(), duration: subElapsed, date: new Date().toISOString().split('T')[0] }, ...tasks]); setCurrentSubTask(null); setSubTaskName(''); setSubElapsed(0); };
+  useEffect(() => {
+    if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask));
+    else localStorage.removeItem('timeflow_sub_current');
+  }, [currentSubTask]);
 
-  const handleManualTask = (task) => {
-    setTasks(prev => [...prev, task]);
+  // Timers
+  useEffect(() => {
+    if (currentTask) {
+      const calculateElapsed = () => {
+        const now = Date.now();
+        const start = new Date(currentTask.startTime).getTime();
+        setElapsed(Math.max(0, Math.floor((now - start) / 1000)));
+      };
+      calculateElapsed();
+      timerRef.current = setInterval(calculateElapsed, 1000);
+    } else {
+      clearInterval(timerRef.current);
+      setElapsed(0);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [currentTask]);
+
+  useEffect(() => {
+    if (currentSubTask) {
+      const calculateSubElapsed = () => {
+        const now = Date.now();
+        const start = new Date(currentSubTask.startTime).getTime();
+        setSubElapsed(Math.max(0, Math.floor((now - start) / 1000)));
+      };
+      calculateSubElapsed();
+      subTimerRef.current = setInterval(calculateSubElapsed, 1000);
+    } else {
+      clearInterval(subTimerRef.current);
+      setSubElapsed(0);
+    }
+    return () => clearInterval(subTimerRef.current);
+  }, [currentSubTask]);
+
+  // PiP Toggle
+  const togglePiP = async () => {
+    if (pipWindow) {
+      pipWindow.close();
+      setPipWindow(null);
+      return;
+    }
+
+    if (!window.documentPictureInPicture) {
+      alert("您的浏览器不支持独立悬浮窗 (Document PiP)。请使用最新版 Chrome 或 Edge。");
+      return;
+    }
+
+    if (window.self !== window.top) {
+      alert("注意：独立悬浮窗 (PiP) 无法在预览/iframe 环境中运行。请下载代码并在本地或全屏页面中运行。已为您切换到页内悬浮模式。");
+      setIsMiniMode(true);
+      return;
+    }
+
+    try {
+      const pip = await window.documentPictureInPicture.requestWindow({
+        width: 340,
+        height: 600,
+      });
+
+      // Copy styles
+      [...document.styleSheets].forEach((styleSheet) => {
+        try {
+          if (styleSheet.href) {
+            const newLink = document.createElement('link');
+            newLink.rel = 'stylesheet';
+            newLink.href = styleSheet.href;
+            pip.document.head.appendChild(newLink);
+          } else if (styleSheet.cssRules) {
+            const newStyle = document.createElement('style');
+            [...styleSheet.cssRules].forEach((rule) => {
+              newStyle.appendChild(document.createTextNode(rule.cssText));
+            });
+            pip.document.head.appendChild(newStyle);
+          }
+        } catch (e) {
+          // ignore CORS errors for stylesheets
+        }
+      });
+
+      // Copy internal style tags (Tailwind injected)
+      const styles = document.querySelectorAll('style');
+      styles.forEach(style => {
+        pip.document.head.appendChild(style.cloneNode(true));
+      });
+
+      if (isDarkMode) pip.document.documentElement.classList.add('dark');
+
+      pip.addEventListener('pagehide', () => {
+        setPipWindow(null);
+      });
+
+      setPipWindow(pip);
+    } catch (err) {
+      console.error("PiP failed", err);
+    }
   };
 
-  const togglePiP = async () => {
-    if (pipWindowRef.current) { pipWindowRef.current.close(); return; }
-    if (!window.documentPictureInPicture) { setIsMiniMode(!isMiniMode); return; }
-    try {
-      const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 280, height: 360 });
-      pipWindowRef.current = pipWindow;
-      setIsMiniMode(true);
-      Array.from(document.styleSheets).forEach(s => { try { if (s.href) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = s.href; pipWindow.document.head.appendChild(l); } else if (s.cssRules) { const st = document.createElement('style'); st.textContent = [...s.cssRules].map(r => r.cssText).join(''); pipWindow.document.head.appendChild(st); } } catch (e) { } });
-      const c = document.getElementById('unified-timer-container');
-      if (c) pipWindow.document.body.appendChild(c);
-      pipWindow.addEventListener('pagehide', () => { const r = document.getElementById('unified-timer-root'); if (r && c) r.appendChild(c); pipWindowRef.current = null; setIsMiniMode(false); });
-    } catch (e) { console.error(e); }
+  const startTimer = () => {
+    if (!taskName.trim()) return;
+    const newTask = {
+      id: generateId(),
+      name: taskName,
+      startTime: new Date().toISOString(),
+      duration: 0,
+      categoryId: selectedCategoryId,
+      type: 'main'
+    };
+    setCurrentTask(newTask);
+  };
+
+  const stopTimer = () => {
+    if (!currentTask) return;
+    const endTime = new Date().toISOString();
+    const completedTask = {
+      ...currentTask,
+      endTime,
+      duration: elapsed,
+      date: new Date().toISOString().split('T')[0]
+    };
+    setTasks([completedTask, ...tasks]);
+    setCurrentTask(null);
+    setTaskName('');
+    setElapsed(0);
+  };
+
+  const adjustStartTime = (minutes) => {
+    if (!currentTask) return;
+    const newStartTime = new Date(new Date(currentTask.startTime).getTime() + minutes * 60000);
+    if (newStartTime > new Date()) return;
+    setCurrentTask({ ...currentTask, startTime: newStartTime.toISOString() });
+  };
+
+  const startSubTimer = () => {
+    if (!subTaskName.trim()) return;
+    const subCat = categories.find(c => c.id === 'sub') || categories[categories.length - 1];
+
+    const newSubTask = {
+      id: generateId(),
+      name: subTaskName,
+      startTime: new Date().toISOString(),
+      duration: 0,
+      categoryId: subCat.id,
+      type: 'sub'
+    };
+    setCurrentSubTask(newSubTask);
+  };
+
+  const stopSubTimer = () => {
+    if (!currentSubTask) return;
+    const endTime = new Date().toISOString();
+    const completedTask = {
+      ...currentSubTask,
+      endTime,
+      duration: subElapsed,
+      date: new Date().toISOString().split('T')[0]
+    };
+    setTasks([completedTask, ...tasks]);
+    setCurrentSubTask(null);
+    setSubTaskName('');
+    setSubElapsed(0);
+  };
+
+  const deleteTask = (id, isPlan = false) => {
+    if (confirm('确定删除这条记录吗？')) {
+      if (isPlan) {
+        setPlans(plans.filter(t => t.id !== id));
+      } else {
+        setTasks(tasks.filter(t => t.id !== id));
+      }
+    }
+  };
+
+  const updateCategory = (id, field, value) => {
+    setCategories(categories.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
+  const applyColorPalette = (paletteName) => {
+    const colors = COLOR_PALETTES[paletteName];
+    if (!colors) return;
+
+    const newCategories = categories.map((cat, index) => {
+      const newColor = colors[index % colors.length];
+      return { ...cat, color: newColor };
+    });
+
+    setCategories(newCategories);
+  };
+
+  const addCategory = () => {
+    setCategories([...categories, { id: generateId(), name: '新分类', color: '#64748b' }]);
+  };
+
+  const removeCategory = (id) => {
+    if (categories.length <= 1) return alert('至少保留一个分类');
+    if (confirm('确定删除这个分类吗？')) {
+      setCategories(categories.filter(c => c.id !== id));
+      if (selectedCategoryId === id) setSelectedCategoryId(categories.find(c => c.id !== id).id);
+    }
+  };
+
+  const resetCategories = () => {
+    if (confirm('恢复默认分类？')) setCategories(DEFAULT_CATEGORIES);
+  };
+
+  const openManualModal = () => {
+    setManualForm({
+      name: '',
+      date: viewDate,
+      startTime: '09:00',
+      endTime: '10:00',
+      categoryId: categories[0]?.id || '',
+      type: 'actual'
+    });
+    setIsManualModalOpen(true);
+  };
+
+  const saveManualEntry = () => {
+    if (!manualForm.name) return alert('请输入任务名称');
+    const startDateTime = new Date(`${manualForm.date}T${manualForm.startTime}`);
+    const endDateTime = new Date(`${manualForm.date}T${manualForm.endTime}`);
+    if (endDateTime <= startDateTime) return alert('结束时间必须晚于开始时间');
+
+    const duration = Math.floor((endDateTime - startDateTime) / 1000);
+    const newTask = {
+      id: generateId(),
+      name: manualForm.name,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      duration: duration,
+      date: manualForm.date,
+      categoryId: manualForm.categoryId
+    };
+
+    if (manualForm.type === 'plan') {
+      setPlans([newTask, ...plans]);
+    } else {
+      setTasks([newTask, ...tasks]);
+    }
+
+    setIsManualModalOpen(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-colors pb-20">
+    <div className="min-h-screen bg-dot-pattern text-slate-900 dark:text-slate-100 pb-20 font-sans transition-colors duration-300">
       <PrintStyles />
-      <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} categories={categories} setCategories={setCategories} resetCategories={() => setCategories(DEFAULT_CATEGORIES)} />
-      <ManualEntryModal isOpen={isManualEntryModalOpen} onClose={() => setIsManualEntryModalOpen(false)} categories={categories} onSave={handleManualTask} />
 
-      {/* NO PRINT UI */}
-      <div className="no-print pt-6 px-6 mb-4 flex justify-between items-center max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">TimeFlow Weeks</h1>
-        <div className="flex gap-2">
-          <button className="p-2 rounded-full hover:bg-white shadow-sm" onClick={() => window.print()}><Printer size={20} className="text-slate-600" /></button>
-          <button className="p-2 rounded-full hover:bg-white shadow-sm" onClick={() => setIsCategoryModalOpen(true)}><Settings size={20} className="text-slate-600" /></button>
+      <ManualEntryModal
+        isManualModalOpen={isManualModalOpen}
+        setIsManualModalOpen={setIsManualModalOpen}
+        manualForm={manualForm}
+        setManualForm={setManualForm}
+        saveManualEntry={saveManualEntry}
+        categories={categories}
+      />
+
+      <CategoryManagerModal
+        isCategoryModalOpen={isCategoryModalOpen}
+        setIsCategoryModalOpen={setIsCategoryModalOpen}
+        categories={categories}
+        applyColorPalette={applyColorPalette}
+        updateCategory={updateCategory}
+        removeCategory={removeCategory}
+        addCategory={addCategory}
+        resetCategories={resetCategories}
+      />
+
+      <div className={`container mx-auto pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500`}>
+        <div className={`grid grid-cols-1 xl:grid-cols-12 gap-8 items-start`}>
+
+          {/* Timer Section - Render in Main Window OR via Portal in PiP */}
+          {!pipWindow && (
+            <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'xl:col-span-4 xl:sticky xl:top-6'}`}>
+              <TimerInterface
+                isMiniMode={isMiniMode}
+                setIsMiniMode={setIsMiniMode}
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+                currentTime={currentTime}
+                elapsed={elapsed}
+                currentTask={currentTask}
+                taskName={taskName}
+                setTaskName={setTaskName}
+                startTimer={startTimer}
+                stopTimer={stopTimer}
+                adjustStartTime={adjustStartTime}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                setSelectedCategoryId={setSelectedCategoryId}
+                openManualModal={openManualModal}
+                setIsCategoryModalOpen={setIsCategoryModalOpen}
+                subElapsed={subElapsed}
+                currentSubTask={currentSubTask}
+                subTaskName={subTaskName}
+                setSubTaskName={setSubTaskName}
+                startSubTimer={startSubTimer}
+                stopSubTimer={stopSubTimer}
+                togglePiP={togglePiP}
+                isPiPActive={false}
+              />
+            </div>
+          )}
+
+          {pipWindow && createPortal(
+            <div className="h-full w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden">
+              <TimerInterface
+                isMiniMode={false} // Always full in PiP
+                setIsMiniMode={() => { }}
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+                currentTime={currentTime}
+                elapsed={elapsed}
+                currentTask={currentTask}
+                taskName={taskName}
+                setTaskName={setTaskName}
+                startTimer={startTimer}
+                stopTimer={stopTimer}
+                adjustStartTime={adjustStartTime}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                setSelectedCategoryId={setSelectedCategoryId}
+                openManualModal={openManualModal}
+                setIsCategoryModalOpen={setIsCategoryModalOpen}
+                subElapsed={subElapsed}
+                currentSubTask={currentSubTask}
+                subTaskName={subTaskName}
+                setSubTaskName={setSubTaskName}
+                startSubTimer={startSubTimer}
+                stopSubTimer={stopSubTimer}
+                togglePiP={togglePiP}
+                isPiPActive={true}
+              />
+            </div>,
+            pipWindow.document.body
+          )}
+
+          {!isMiniMode && (
+            <div className="xl:col-span-8 space-y-8 animate-fade-in-up w-full">
+              {/* Flex container for Chart + Stats */}
+              <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
+                <div className="flex-1 w-full min-w-0">
+                  <WeeklyReportInterface
+                    viewDate={viewDate}
+                    setViewDate={setViewDate}
+                    tasks={tasks}
+                    plans={plans}
+                    categories={categories}
+                    openManualModal={openManualModal}
+                  />
+                </div>
+
+                {/* Stats Panel - Moved here to be side-by-side on XL, stacked on smaller */}
+                <div className="no-print w-full xl:w-80 flex-shrink-0">
+                  <StatsInterface
+                    tasks={tasks}
+                    categories={categories}
+                    weekStartStr={getStartOfWeek(viewDate).toISOString().split('T')[0]}
+                    weekEndStr={(() => {
+                      const d = getStartOfWeek(viewDate);
+                      d.setDate(d.getDate() + 6);
+                      return d.toISOString().split('T')[0];
+                    })()}
+                  />
+                </div>
+              </div>
+
+              <div className="w-full no-print">
+                <div className="flex items-center gap-2 px-2 mb-4">
+                  <CheckCircle size={20} className="text-indigo-500" />
+                  <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">今日清单 ({viewDate})</h2>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
+                  {tasks.filter(t => t.date === viewDate).length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                        <Calendar size={20} />
+                      </div>
+                      <p>本日暂无记录，开始你的专注之旅吧</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                      {tasks.filter(t => t.date === viewDate).slice().reverse().map(task => {
+                        const cat = getCategory(categories, task.categoryId || task.category?.id);
+                        return (
+                          <div key={task.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                            <div className="flex items-start gap-4">
+                              <span className="mt-1.5 w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: cat.color }}></span>
+                              <div>
+                                <div className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 text-lg">
+                                  {task.name}
+                                  {task.type === 'sub' && <span className="text-[10px] bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">Parallel</span>}
+                                </div>
+                                <div className="text-xs text-slate-400 font-mono mt-1.5 flex gap-2 items-center">
+                                  <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400">
+                                    {formatTime(new Date(task.startTime))} - {formatTime(new Date(task.endTime))}
+                                  </span>
+                                  <span className="opacity-30">|</span>
+                                  <span style={{ color: cat.color }} className="font-medium">{cat.name}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-lg">{formatDuration(task.duration)}</span>
+                              <button onClick={() => deleteTask(task.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      <div className="container mx-auto px-4 max-w-xl relative no-print">
-        <div id="unified-timer-root"><div id="unified-timer-container"><TimerContainer currentTask={currentTask} taskName={taskName} setTaskName={setTaskName} selectedCategoryId={selectedCategoryId} setSelectedCategoryId={setSelectedCategoryId} categories={categories} startTimer={startTimer} stopTimer={stopTimer} elapsed={elapsed} currentSubTask={currentSubTask} subTaskName={subTaskName} setSubTaskName={setSubTaskName} startSubTimer={startSubTimer} stopSubTimer={stopSubTimer} subElapsed={subElapsed} isMiniMode={isMiniMode} togglePiP={togglePiP} onOpenSettings={() => setIsCategoryModalOpen(true)} /></div></div>
-      </div>
-
-      {/* PRINT ROOT - Enforce Flex Layout */}
-      <div id="print-root">
-        <div className="print-area">
-          <WeeksLayout viewDate={viewDate} tasks={tasks} categories={categories} onOpenManualEntry={() => setIsManualEntryModalOpen(true)} />
-        </div>
-      </div>
+      {isMiniMode && !pipWindow && <div className="fixed inset-0 pointer-events-none no-print"></div>}
     </div>
   );
 }
+
+export default App;
