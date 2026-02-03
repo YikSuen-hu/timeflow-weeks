@@ -799,11 +799,14 @@ const TimerInterface = ({
 
               {/* Tools Row */}
               <div className="flex gap-2 mt-3">
-                <button onClick={openManualModal} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="补登/计划">
-                  <Edit2 size={16} /> 补登 / 计划
+                <button onClick={() => openManualModal('actual')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="补登实绩">
+                  <Edit2 size={16} /> 补登
+                </button>
+                <button onClick={() => openManualModal('plan')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="计划预定">
+                  <Calendar size={16} /> 计划
                 </button>
                 <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="打印周报">
-                  <Printer size={16} /> 打印周报
+                  <Printer size={16} /> 打印时间轴
                 </button>
               </div>
 
@@ -955,8 +958,8 @@ const SideNav = ({ activePage, onNavigate }) => {
   return (
     <div className="no-print w-20 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col items-center py-6 h-screen sticky top-0 z-50">
       <div className="mb-8">
-        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-          <Zap size={20} fill="currentColor" />
+        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 text-xl font-bold font-mono">
+          S
         </div>
       </div>
       <div className="space-y-4 w-full px-2">
@@ -1024,7 +1027,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    const savedMode = localStorage.getItem('timeflow_dark_mode');
+    if (savedMode !== null) {
+      setIsDarkMode(JSON.parse(savedMode));
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setIsDarkMode(true);
     }
   }, []);
@@ -1036,6 +1042,8 @@ function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+    localStorage.setItem('timeflow_dark_mode', JSON.stringify(isDarkMode));
+
     // Sync PiP if active
     if (pipWindow) {
       if (isDarkMode) {
@@ -1296,14 +1304,14 @@ function App() {
     if (confirm('恢复默认分类？')) setCategories(DEFAULT_CATEGORIES);
   };
 
-  const openManualModal = () => {
+  const openManualModal = (type = 'actual') => {
     setManualForm({
       name: '',
       date: viewDate,
       startTime: '09:00',
       endTime: '10:00',
       categoryId: categories[0]?.id || '',
-      type: 'actual'
+      type: type
     });
     setIsManualModalOpen(true);
   };
