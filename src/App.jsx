@@ -432,8 +432,12 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
       {/* Defined thin line styles for print consistency */}
       <style>{`
-        .print-thin-border { border-width: 0.1px; border-color: rgba(180, 180, 180, 0.15); }
-        @media print { .print-thin-border { border-width: 0.1px; border-color: rgba(180, 180, 180, 0.15); } }
+        .print-line-h { border-bottom: 0.25px solid rgba(0,0,0,0.1) !important; }
+        .print-line-v { border-right: 0.25px solid rgba(0,0,0,0.1) !important; }
+        @media print { 
+          .print-line-h { border-bottom: 0.1px solid rgba(0,0,0,0.08) !important; }
+          .print-line-v { border-right: 0.1px solid rgba(0,0,0,0.08) !important; }
+        }
       `}</style>
       <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
@@ -464,13 +468,13 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines (4mm strict) - Ultra thin for print */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.25px] border-gray-200 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full print-line-h" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             {/* 1AM Divider */}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.25px] border-gray-200 print-thin-border" style={{ left: `${(i + 1) * 4}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full print-line-v" style={{ left: `${(i + 1) * 4}mm` }}></div>
             ))}
           </div>
 
@@ -533,13 +537,13 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.25px] border-gray-200 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full print-line-h" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
 
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.25px] border-gray-200 print-thin-border" style={{ left: `${(i + 1) * 8}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full print-line-v" style={{ left: `${(i + 1) * 8}mm` }}></div>
             ))}
             {weekDates.map((_, i) => (
               <div key={`vld-${i}`} className="absolute h-full border-r-[0.25px] border-dotted border-gray-200" style={{ left: `${i * 8 + 4}mm` }}></div>
