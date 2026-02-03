@@ -54,6 +54,19 @@ const PrintStyles = () => (
        background-size: 4mm 4mm;
        background-image: radial-gradient(circle, rgba(150, 150, 150, 0.5) 0.5px, transparent 0.5px);
     }
+    .horizontal-lines-4mm {
+      background-size: 100% 4mm;
+      background-image: linear-gradient(to bottom, rgba(150, 150, 150, 0.5) 0.25px, transparent 0.25px);
+    }
+    .vertical-line-thin {
+      border-right-width: 0.25px !important;
+      border-color: rgba(200, 200, 200, 0.8) !important;
+    }
+    .vertical-line-dotted {
+      border-right-width: 0.25px !important;
+      border-right-style: dotted !important;
+      border-color: rgba(200, 200, 200, 0.8) !important;
+    }
   `}</style>
 );
 
@@ -430,18 +443,19 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
             <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
           ))}
         </div>
-        <div className="flex relative" style={{ width: '28mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
+        <div className="flex relative horizontal-lines-4mm" style={{ width: '28mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
           <div className="absolute inset-0 z-0 pointer-events-none">
-            {Array.from({ length: HOURS_DAY_PART }).map((_, i) => <div key={`hl-${i}`} className="absolute w-full border-b border-gray-200" style={{ top: `${(i + 1) * HOUR_HEIGHT_DAY}mm` }}></div>)}
-            {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => <div key={`nhl-${i}`} className="absolute w-full border-b border-gray-100" style={{ top: `${HEIGHT_DAY_MM + (i + 1) * HOUR_HEIGHT_NIGHT}mm` }}></div>)}
-            <div className="absolute w-full border-b border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
-            {Array.from({ length: 7 }).map((_, i) => <div key={`vl-${i}`} className="absolute h-full border-r border-gray-100" style={{ left: `${(i + 1) * 4}mm` }}></div>)}
+            {/* Only vertical lines needed now */}
+            <div className="absolute w-full border-b-[0.25px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
+            {weekDates.map((_, i) => (
+              <div key={`vl-${i}`} className="absolute h-full vertical-line-thin" style={{ left: `${(i + 1) * 4}mm` }}></div>
+            ))}
           </div>
           {weekDates.map((dateObj, i) => {
             const dayTasks = getTasksForDate(processedTasks, dateObj);
             const layout = getTaskLayout(dayTasks);
             return (
-              <div key={i} className="relative h-full border-r border-gray-200 last:border-0" style={{ width: '4mm' }}>
+              <div key={i} className="relative h-full" style={{ width: '4mm' }}>
                 {layout.map((item) => (
                   <div key={item.task.id} style={getTaskStyle(item, categories)} title={`${item.task.name}`}>
                     <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
@@ -488,13 +502,16 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
             <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
           ))}
         </div>
-        <div className="flex relative" style={{ width: '56mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
+        <div className="flex relative horizontal-lines-4mm" style={{ width: '56mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
           <div className="absolute inset-0 z-0 pointer-events-none">
-            {Array.from({ length: HOURS_DAY_PART }).map((_, i) => <div key={`hl-${i}`} className="absolute w-full border-b border-gray-200" style={{ top: `${(i + 1) * HOUR_HEIGHT_DAY}mm` }}></div>)}
-            {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => <div key={`nhl-${i}`} className="absolute w-full border-b border-gray-100" style={{ top: `${HEIGHT_DAY_MM + (i + 1) * HOUR_HEIGHT_NIGHT}mm` }}></div>)}
-            <div className="absolute w-full border-b border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
-            {Array.from({ length: 7 }).map((_, i) => <div key={`vl-${i}`} className="absolute h-full border-r border-gray-200" style={{ left: `${(i + 1) * 8}mm` }}></div>)}
-            {Array.from({ length: 7 }).map((_, i) => <div key={`vld-${i}`} className="absolute h-full border-r border-dotted border-gray-100" style={{ left: `${(i) * 8 + 4}mm` }}></div>)}
+            {/* Vertical Lines */}
+            <div className="absolute w-full border-b-[0.25px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
+            {weekDates.map((_, i) => (
+              <div key={`vl-${i}`} className="absolute h-full vertical-line-thin" style={{ left: `${(i + 1) * 8}mm` }}></div>
+            ))}
+            {weekDates.map((_, i) => (
+              <div key={`vld-${i}`} className="absolute h-full vertical-line-dotted" style={{ left: `${i * 8 + 4}mm` }}></div>
+            ))}
           </div>
           {weekDates.map((dateObj, i) => {
             const dayPlans = getTasksForDate(processedPlans, dateObj);
@@ -502,8 +519,8 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
             const dayActuals = getTasksForDate(processedTasks, dateObj);
             const actualLayout = getTaskLayout(dayActuals);
             return (
-              <div key={i} className="flex h-full border-r border-gray-200 last:border-0" style={{ width: '8mm' }}>
-                <div className="relative h-full border-r border-dotted border-gray-100" style={{ width: '4mm' }}>
+              <div key={i} className="flex h-full vertical-line-thin" style={{ width: '8mm' }}>
+                <div className="relative h-full vertical-line-dotted" style={{ width: '4mm' }}>
                   {planLayout.map((item) => (
                     <div key={item.task.id} style={getTaskStyle(item, categories, true)} title={`Plan: ${item.task.name}`}>
                       <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
