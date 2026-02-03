@@ -63,9 +63,9 @@ const PrintStyles = () => (
       );
     }
     .vertical-line-thin {
-      border-right-width: 0.25px !important;
+      border-right-width: 0.1px !important;
       border-right-style: solid !important;
-      border-color: rgba(200, 200, 200, 0.8) !important;
+      border-color: rgba(200, 200, 200, 0.4) !important;
     }
     .vertical-line-dotted {
       border-right-width: 0.25px !important;
@@ -459,13 +459,13 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines (4mm strict) */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.25px] border-gray-200" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full border-b-[0.1px] border-gray-100" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             {/* 1AM Divider */}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.25px] border-gray-200" style={{ left: `${(i + 1) * 4}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full border-r-[0.1px] border-gray-100" style={{ left: `${(i + 1) * 4}mm` }}></div>
             ))}
           </div>
 
@@ -755,9 +755,9 @@ const TimerInterface = ({
       {/* Main Content */}
       <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-8 pb-10'}`}>
         <div className="text-center mb-8 relative group">
-          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-baseline justify-center gap-1 ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
-            <span>{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
-            <span className={`text-sm font-medium text-slate-400 ${isMiniMode || isPiPActive ? '' : ''}`}>
+          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-4 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
+            <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
+            <span className={`text-sm font-medium text-slate-400 mb-2 ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
           </div>
@@ -1489,7 +1489,39 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="w-full no-print">
+                  <div className="w-full no-print space-y-6">
+                    {/* Plans Section */}
+                    <div>
+                      <div className="flex items-center gap-2 px-2 mb-4">
+                        <Calendar size={20} className="text-emerald-500" />
+                        <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">今日计划 ({viewDate})</h2>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
+                        {plans.filter(t => t.date === viewDate).length === 0 ? (
+                          <div className="p-8 text-center text-slate-400 text-sm">暂无计划</div>
+                        ) : (
+                          <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            {plans.filter(t => t.date === viewDate).sort((a, b) => new Date(a.startTime) - new Date(b.startTime)).map(task => {
+                              const cat = getCategory(categories, task.categoryId || task.category?.id);
+                              return (
+                                <div key={task.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: cat.color }}></div>
+                                    <div>
+                                      <div className="font-medium text-slate-700 dark:text-slate-200">{task.name}</div>
+                                      <div className="text-xs text-slate-400 font-mono">
+                                        {formatTime(new Date(task.startTime))} - {formatTime(new Date(task.endTime))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button onClick={() => deleteTask(task.id, true)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2 px-2 mb-4">
                       <CheckCircle size={20} className="text-indigo-500" />
                       <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">今日清单 ({viewDate})</h2>
