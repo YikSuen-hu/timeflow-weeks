@@ -1384,7 +1384,7 @@ function App() {
                       onClick={() => setCurrentPage('printer')}
                       className="flex items-center gap-2 px-4 py-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors font-bold text-sm"
                     >
-                      <ImageIcon size={16} /> 照片打印工具
+                      <Printer size={16} /> 照片打印工具
                     </button>
                   </div>
                   <WeeklyReportInterface
