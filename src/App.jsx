@@ -846,16 +846,6 @@ const TimerInterface = ({
 const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, categories, applyColorPalette, updateCategory, removeCategory, addCategory, resetCategories }) => {
   if (!isCategoryModalOpen) return null;
 
-  const applyPalette = (paletteName) => {
-    const colors = COLOR_PALETTES[paletteName];
-    if (!colors) return;
-    categories.forEach((cat, index) => {
-      if (colors[index % colors.length]) {
-        updateCategory(cat.id, 'color', colors[index % colors.length]);
-      }
-    });
-  };
-
   const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
 
   return (
@@ -874,7 +864,7 @@ const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, cat
             {Object.keys(COLOR_PALETTES).map(name => (
               <button
                 key={name}
-                onClick={() => applyPalette(name)}
+                onClick={() => applyColorPalette(name)}
                 className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >
                 {name}
