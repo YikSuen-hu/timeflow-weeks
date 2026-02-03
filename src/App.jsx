@@ -251,6 +251,10 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
   const catId = task.categoryId || task.category?.id;
   const cat = getCategory(categories, catId);
   const isOffset = colIndex > 0;
+
+  // Detect if text is predominantly English (or numbers/symbols)
+  const isEnglish = /^[A-Za-z0-9\s.,-]+$/.test(task.name);
+
   return {
     top: `${topMM}mm`,
     height: `${heightMM}mm`,
@@ -265,7 +269,7 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
     alignItems: 'center',
     justifyContent: 'center',
     writingMode: 'vertical-rl',
-    textOrientation: 'upright',
+    textOrientation: isEnglish ? 'sideways' : 'upright',
     overflow: 'hidden',
     color: isPlan ? cat.color : '#fff',
     fontSize: getAdaptiveFontSize(heightMM, task.name),
@@ -937,6 +941,40 @@ const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm,
 };
 
 // Main App Component
+// --- Side Navigation Component ---
+const SideNav = ({ activePage, onNavigate }) => {
+  const navItems = [
+    { id: 'dashboard', icon: Calendar, label: '日程手账' },
+    { id: 'printer', icon: Printer, label: '素材打印' },
+  ];
+
+  return (
+    <div className="no-print w-20 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col items-center py-6 h-screen sticky top-0 z-50">
+      <div className="mb-8">
+        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+          <Zap size={20} fill="currentColor" />
+        </div>
+      </div>
+      <div className="space-y-4 w-full px-2">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => onNavigate(item.id)}
+            className={`w-full flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 group
+              ${activePage === item.id
+                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold shadow-sm'
+                : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-600 dark:hover:text-slate-300'}`}
+          >
+            <item.icon size={24} strokeWidth={activePage === item.id ? 2.5 : 2} className="transition-transform group-hover:scale-110" />
+            <span className="text-[10px]">{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- App Component ---
 function App() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [tasks, setTasks] = useState([]);
@@ -990,10 +1028,16 @@ function App() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      if (pipWindow) pipWindow.document.documentElement.classList.add('dark');
+      if (pipWindow) {
+        pipWindow.document.documentElement.classList.add('dark');
+        pipWindow.document.body.classList.add('dark');
+      }
     } else {
       document.documentElement.classList.remove('dark');
-      if (pipWindow) pipWindow.document.documentElement.classList.remove('dark');
+      if (pipWindow) {
+        pipWindow.document.documentElement.classList.remove('dark');
+        pipWindow.document.body.classList.remove('dark');
+      }
     }
   }, [isDarkMode, pipWindow]);
 
@@ -1123,7 +1167,10 @@ function App() {
         pip.document.head.appendChild(style.cloneNode(true));
       });
 
-      if (isDarkMode) pip.document.documentElement.classList.add('dark');
+      if (isDarkMode) {
+        pip.document.documentElement.classList.add('dark');
+        pip.document.body.classList.add('dark');
+      }
 
       pip.addEventListener('pagehide', () => {
         setPipWindow(null);
@@ -1290,197 +1337,202 @@ function App() {
     setIsManualModalOpen(false);
   };
 
-  if (currentPage === 'printer') {
-    return <PhotoPrinter onBack={() => setCurrentPage('dashboard')} />;
-  }
-
   return (
-    <div className="min-h-screen bg-dot-pattern text-slate-900 dark:text-slate-100 pb-20 font-sans transition-colors duration-300">
+    <div className="flex min-h-screen bg-dot-pattern text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       <PrintStyles />
 
-      <ManualEntryModal
-        isManualModalOpen={isManualModalOpen}
-        setIsManualModalOpen={setIsManualModalOpen}
-        manualForm={manualForm}
-        setManualForm={setManualForm}
-        saveManualEntry={saveManualEntry}
-        categories={categories}
-      />
+      {/* Side Navigation */}
+      <SideNav activePage={currentPage} onNavigate={setCurrentPage} />
 
-      <CategoryManagerModal
-        isCategoryModalOpen={isCategoryModalOpen}
-        setIsCategoryModalOpen={setIsCategoryModalOpen}
-        categories={categories}
-        applyColorPalette={applyColorPalette}
-        updateCategory={updateCategory}
-        removeCategory={removeCategory}
-        addCategory={addCategory}
-        resetCategories={resetCategories}
-      />
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0">
+        <ManualEntryModal
+          isManualModalOpen={isManualModalOpen}
+          setIsManualModalOpen={setIsManualModalOpen}
+          manualForm={manualForm}
+          setManualForm={setManualForm}
+          saveManualEntry={saveManualEntry}
+          categories={categories}
+        />
 
-      <div className={`container mx-auto pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500`}>
-        <div className={`grid grid-cols-1 xl:grid-cols-12 gap-8 items-start`}>
+        <CategoryManagerModal
+          isCategoryModalOpen={isCategoryModalOpen}
+          setIsCategoryModalOpen={setIsCategoryModalOpen}
+          categories={categories}
+          applyColorPalette={applyColorPalette}
+          updateCategory={updateCategory}
+          removeCategory={removeCategory}
+          addCategory={addCategory}
+          resetCategories={resetCategories}
+        />
 
-          {/* Timer Section - Render in Main Window OR via Portal in PiP */}
-          {!pipWindow && (
-            <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'xl:col-span-4 xl:sticky xl:top-6'}`}>
-              <TimerInterface
-                isMiniMode={isMiniMode}
-                setIsMiniMode={setIsMiniMode}
-                isDarkMode={isDarkMode}
-                setIsDarkMode={setIsDarkMode}
-                currentTime={currentTime}
-                elapsed={elapsed}
-                currentTask={currentTask}
-                taskName={taskName}
-                setTaskName={setTaskName}
-                startTimer={startTimer}
-                stopTimer={stopTimer}
-                adjustStartTime={adjustStartTime}
-                categories={categories}
-                selectedCategoryId={selectedCategoryId}
-                setSelectedCategoryId={setSelectedCategoryId}
-                openManualModal={openManualModal}
-                setIsCategoryModalOpen={setIsCategoryModalOpen}
-                subElapsed={subElapsed}
-                currentSubTask={currentSubTask}
-                subTaskName={subTaskName}
-                setSubTaskName={setSubTaskName}
-                startSubTimer={startSubTimer}
-                stopSubTimer={stopSubTimer}
-                togglePiP={togglePiP}
-                isPiPActive={false}
-              />
-            </div>
-          )}
-
-          {pipWindow && createPortal(
-            <div className="h-full w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden">
-              <TimerInterface
-                isMiniMode={false} // Always full in PiP
-                setIsMiniMode={() => { }}
-                isDarkMode={isDarkMode}
-                setIsDarkMode={setIsDarkMode}
-                currentTime={currentTime}
-                elapsed={elapsed}
-                currentTask={currentTask}
-                taskName={taskName}
-                setTaskName={setTaskName}
-                startTimer={startTimer}
-                stopTimer={stopTimer}
-                adjustStartTime={adjustStartTime}
-                categories={categories}
-                selectedCategoryId={selectedCategoryId}
-                setSelectedCategoryId={setSelectedCategoryId}
-                openManualModal={openManualModal}
-                setIsCategoryModalOpen={setIsCategoryModalOpen}
-                subElapsed={subElapsed}
-                currentSubTask={currentSubTask}
-                subTaskName={subTaskName}
-                setSubTaskName={setSubTaskName}
-                startSubTimer={startSubTimer}
-                stopSubTimer={stopSubTimer}
-                togglePiP={togglePiP}
-                isPiPActive={true}
-              />
-            </div>,
-            pipWindow.document.body
-          )}
+        {currentPage === 'printer' ? (
+          <PhotoPrinter onBack={() => setCurrentPage('dashboard')} />
+        ) : (
+          <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto">
+            <div className={`grid grid-cols-1 xl:grid-cols-12 gap-8 items-start`}>
 
 
-          {!isMiniMode && (
-            <div className="xl:col-span-8 space-y-8 animate-fade-in-up w-full">
-              {/* Flex container for Chart + Stats */}
-              <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
-                <div className="flex-1 w-full min-w-0">
-                  {/* Navigation Header for Dashboard */}
-                  <div className="no-print flex justify-end mb-4">
-                    <button
-                      onClick={() => setCurrentPage('printer')}
-                      className="flex items-center gap-2 px-4 py-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors font-bold text-sm"
-                    >
-                      <Printer size={16} /> 照片打印工具
-                    </button>
-                  </div>
-                  <WeeklyReportInterface
-                    viewDate={viewDate}
-                    setViewDate={setViewDate}
-                    tasks={tasks}
-                    plans={plans}
+              {/* Timer Section - Render in Main Window OR via Portal in PiP */}
+              {!pipWindow && (
+                <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'xl:col-span-4 xl:sticky xl:top-6'}`}>
+                  <TimerInterface
+                    isMiniMode={isMiniMode}
+                    setIsMiniMode={setIsMiniMode}
+                    isDarkMode={isDarkMode}
+                    setIsDarkMode={setIsDarkMode}
+                    currentTime={currentTime}
+                    elapsed={elapsed}
+                    currentTask={currentTask}
+                    taskName={taskName}
+                    setTaskName={setTaskName}
+                    startTimer={startTimer}
+                    stopTimer={stopTimer}
+                    adjustStartTime={adjustStartTime}
                     categories={categories}
+                    selectedCategoryId={selectedCategoryId}
+                    setSelectedCategoryId={setSelectedCategoryId}
                     openManualModal={openManualModal}
+                    setIsCategoryModalOpen={setIsCategoryModalOpen}
+                    subElapsed={subElapsed}
+                    currentSubTask={currentSubTask}
+                    subTaskName={subTaskName}
+                    setSubTaskName={setSubTaskName}
+                    startSubTimer={startSubTimer}
+                    stopSubTimer={stopSubTimer}
+                    togglePiP={togglePiP}
+                    isPiPActive={false}
                   />
                 </div>
+              )}
 
-                {/* Stats Panel - Moved here to be side-by-side on XL, stacked on smaller */}
-                <div className="no-print w-full xl:w-80 flex-shrink-0">
-                  <StatsInterface
-                    tasks={tasks}
+              {pipWindow && createPortal(
+                <div className="h-full w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden">
+                  <TimerInterface
+                    isMiniMode={false} // Always full in PiP
+                    setIsMiniMode={() => { }}
+                    isDarkMode={isDarkMode}
+                    setIsDarkMode={setIsDarkMode}
+                    currentTime={currentTime}
+                    elapsed={elapsed}
+                    currentTask={currentTask}
+                    taskName={taskName}
+                    setTaskName={setTaskName}
+                    startTimer={startTimer}
+                    stopTimer={stopTimer}
+                    adjustStartTime={adjustStartTime}
                     categories={categories}
-                    weekStartStr={getStartOfWeek(viewDate).toISOString().split('T')[0]}
-                    weekEndStr={(() => {
-                      const d = getStartOfWeek(viewDate);
-                      d.setDate(d.getDate() + 6);
-                      return d.toISOString().split('T')[0];
-                    })()}
+                    selectedCategoryId={selectedCategoryId}
+                    setSelectedCategoryId={setSelectedCategoryId}
+                    openManualModal={openManualModal}
+                    setIsCategoryModalOpen={setIsCategoryModalOpen}
+                    subElapsed={subElapsed}
+                    currentSubTask={currentSubTask}
+                    subTaskName={subTaskName}
+                    setSubTaskName={setSubTaskName}
+                    startSubTimer={startSubTimer}
+                    stopSubTimer={stopSubTimer}
+                    togglePiP={togglePiP}
+                    isPiPActive={true}
                   />
-                </div>
-              </div>
+                </div>,
+                pipWindow.document.body
+              )}
 
-              <div className="w-full no-print">
-                <div className="flex items-center gap-2 px-2 mb-4">
-                  <CheckCircle size={20} className="text-indigo-500" />
-                  <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">今日清单 ({viewDate})</h2>
-                </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
-                  {tasks.filter(t => t.date === viewDate).length === 0 ? (
-                    <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                        <Calendar size={20} />
+              {!isMiniMode && (
+                <div className="xl:col-span-8 space-y-8 animate-fade-in-up w-full">
+                  {/* Flex container for Chart + Stats */}
+                  <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
+                    <div className="flex-1 w-full min-w-0">
+                      {/* Navigation Header for Dashboard */}
+                      <div className="no-print flex justify-end mb-4">
+                        <button
+                          onClick={() => setCurrentPage('printer')}
+                          className="flex items-center gap-2 px-4 py-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors font-bold text-sm"
+                        >
+                          <Printer size={16} /> 照片打印工具
+                        </button>
                       </div>
-                      <p>本日暂无记录，开始你的专注之旅吧</p>
+                      <WeeklyReportInterface
+                        viewDate={viewDate}
+                        setViewDate={setViewDate}
+                        tasks={tasks}
+                        plans={plans}
+                        categories={categories}
+                        openManualModal={openManualModal}
+                      />
                     </div>
-                  ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                      {tasks.filter(t => t.date === viewDate).slice().reverse().map(task => {
-                        const cat = getCategory(categories, task.categoryId || task.category?.id);
-                        return (
-                          <div key={task.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
-                            <div className="flex items-start gap-4">
-                              <span className="mt-1.5 w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: cat.color }}></span>
-                              <div>
-                                <div className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 text-lg">
-                                  {task.name}
-                                  {task.type === 'sub' && <span className="text-[10px] bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">Parallel</span>}
+
+                    {/* Stats Panel - Moved here to be side-by-side on XL, stacked on smaller */}
+                    <div className="no-print w-full xl:w-80 flex-shrink-0">
+                      <StatsInterface
+                        tasks={tasks}
+                        categories={categories}
+                        weekStartStr={getStartOfWeek(viewDate).toISOString().split('T')[0]}
+                        weekEndStr={(() => {
+                          const d = getStartOfWeek(viewDate);
+                          d.setDate(d.getDate() + 6);
+                          return d.toISOString().split('T')[0];
+                        })()}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="w-full no-print">
+                    <div className="flex items-center gap-2 px-2 mb-4">
+                      <CheckCircle size={20} className="text-indigo-500" />
+                      <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">今日清单 ({viewDate})</h2>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
+                      {tasks.filter(t => t.date === viewDate).length === 0 ? (
+                        <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                            <Calendar size={20} />
+                          </div>
+                          <p>本日暂无记录，开始你的专注之旅吧</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                          {tasks.filter(t => t.date === viewDate).slice().reverse().map(task => {
+                            const cat = getCategory(categories, task.categoryId || task.category?.id);
+                            return (
+                              <div key={task.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                                <div className="flex items-start gap-4">
+                                  <span className="mt-1.5 w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: cat.color }}></span>
+                                  <div>
+                                    <div className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 text-lg">
+                                      {task.name}
+                                      {task.type === 'sub' && <span className="text-[10px] bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">Parallel</span>}
+                                    </div>
+                                    <div className="text-xs text-slate-400 font-mono mt-1.5 flex gap-2 items-center">
+                                      <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400">
+                                        {formatTime(new Date(task.startTime))} - {formatTime(new Date(task.endTime))}
+                                      </span>
+                                      <span className="opacity-30">|</span>
+                                      <span style={{ color: cat.color }} className="font-medium">{cat.name}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-xs text-slate-400 font-mono mt-1.5 flex gap-2 items-center">
-                                  <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400">
-                                    {formatTime(new Date(task.startTime))} - {formatTime(new Date(task.endTime))}
-                                  </span>
-                                  <span className="opacity-30">|</span>
-                                  <span style={{ color: cat.color }} className="font-medium">{cat.name}</span>
+                                <div className="flex items-center gap-6">
+                                  <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-lg">{formatDuration(task.duration)}</span>
+                                  <button onClick={() => deleteTask(task.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                              <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-lg">{formatDuration(task.duration)}</span>
-                              <button onClick={() => deleteTask(task.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
       {isMiniMode && !pipWindow && <div className="fixed inset-0 pointer-events-none no-print"></div>}
-    </div >
-  );
+      </div >
+      );
 }
 
-export default App;
+      export default App;
