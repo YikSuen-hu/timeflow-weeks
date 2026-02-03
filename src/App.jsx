@@ -46,18 +46,12 @@ const PrintStyles = () => (
     .grid-pattern-4mm {
       background-size: 4mm 4mm;
       background-image:
-        linear-gradient(to right, rgba(200, 200, 200, 0.3) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+        linear-gradient(to right, rgba(150, 150, 150, 0.3) 0.25px, transparent 0.25px),
+        linear-gradient(to bottom, rgba(150, 150, 150, 0.3) 0.25px, transparent 0.25px);
     }
-
-    .bg-dot-pattern {
-      background-color: #f8fafc;
-      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-    .dark .bg-dot-pattern {
-      background-color: #0f172a;
-      background-image: radial-gradient(#1e293b 1px, transparent 1px);
+    .grid-pattern-4mm-dotted {
+       background-size: 4mm 4mm;
+       background-image: radial-gradient(circle, rgba(150, 150, 150, 0.5) 0.5px, transparent 0.5px);
     }
   `}</style>
 );
@@ -86,7 +80,7 @@ const HOUR_HEIGHT_DAY = 8;
 const HOUR_HEIGHT_NIGHT = 4;
 const HEIGHT_DAY_MM = HOURS_DAY_PART * HOUR_HEIGHT_DAY;
 const HEIGHT_NIGHT_MM = HOURS_NIGHT_PART * HOUR_HEIGHT_NIGHT;
-const TOTAL_HEIGHT_MM = HEIGHT_DAY_MM + HEIGHT_NIGHT_MM;
+const TOTAL_HEIGHT_MM = HEIGHT_DAY_MM + HEIGHT_NIGHT_PART * HOUR_HEIGHT_NIGHT; // Corrected calculation
 
 // --- 2. Utilities ---
 
@@ -149,6 +143,7 @@ const splitTasksAcrossDays = (taskList) => {
 
       let currentSegmentEnd = new Date(Math.min(endTime.getTime(), logicalDayEnd.getTime()));
 
+      // Force segment end to match 7AM boundary if crossing it (though usually safe within split logic)
       if (currentSegmentEnd > currentSegmentStart) {
         segments.push({
           ...task,
@@ -171,19 +166,38 @@ const calculateTopHeight = (task) => {
   let h = start.getHours();
   const m = start.getMinutes();
   const adjustedH = h < 7 ? h + 24 : h;
-  const hoursFromStart = (adjustedH - 7) + (m / 60);
+  const startHourMetric = (adjustedH - 7) + (m / 60); // 0.0 to 24.0
+
   let topMM = 0;
-  let scale = 0;
-  if (hoursFromStart < HOURS_DAY_PART) {
-    topMM = hoursFromStart * HOUR_HEIGHT_DAY;
-    scale = HOUR_HEIGHT_DAY;
+  // Calculate Top Position
+  if (startHourMetric < HOURS_DAY_PART) {
+    topMM = startHourMetric * HOUR_HEIGHT_DAY;
   } else {
-    topMM = HEIGHT_DAY_MM + (hoursFromStart - HOURS_DAY_PART) * HOUR_HEIGHT_NIGHT;
-    scale = HOUR_HEIGHT_NIGHT;
+    topMM = HEIGHT_DAY_MM + (startHourMetric - HOURS_DAY_PART) * HOUR_HEIGHT_NIGHT;
   }
+
+  // Calculate Height (Integral)
   const durationHours = task.duration / 3600;
-  const heightMM = Math.max(durationHours * scale, 1);
-  return { topMM, heightMM };
+  const endHourMetric = startHourMetric + durationHours;
+
+  let heightMM = 0;
+
+  // Case 1: Entirely within Day Part (e.g. 08:00 - 12:00)
+  if (endHourMetric <= HOURS_DAY_PART) {
+    heightMM = durationHours * HOUR_HEIGHT_DAY;
+  }
+  // Case 2: Entirely within Night Part (e.g. 02:00 - 04:00)
+  else if (startHourMetric >= HOURS_DAY_PART) {
+    heightMM = durationHours * HOUR_HEIGHT_NIGHT;
+  }
+  // Case 3: Crossing Boundary (e.g. 23:00 - 02:00 / 16h - 19h metric)
+  else {
+    const dayDuration = HOURS_DAY_PART - startHourMetric;
+    const nightDuration = endHourMetric - HOURS_DAY_PART;
+    heightMM = (dayDuration * HOUR_HEIGHT_DAY) + (nightDuration * HOUR_HEIGHT_NIGHT);
+  }
+
+  return { topMM, heightMM: Math.max(heightMM, 1) };
 };
 
 const getTaskLayout = (dayTasks) => {
