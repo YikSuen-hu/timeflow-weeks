@@ -1483,7 +1483,7 @@ function App() {
 
 
               {!isMiniMode && (
-                <div className="xl:col-span-8 space-y-8 animate-fade-in-up w-full">
+                <div className="xl:col-span-6 space-y-8 animate-fade-in-up w-full">
                   {/* Top: Weekly Report Strips */}
                   <WeeklyReportInterface
                     viewDate={viewDate}
@@ -1495,8 +1495,12 @@ function App() {
                     showStandard={showStandard}
                     showPlanActual={showPlanActual}
                   />
+                </div>
+              )}
 
-                  {/* Middle: Stats */}
+              {!isMiniMode && (
+                <div className="xl:col-span-3 space-y-6 animate-fade-in-up w-full">
+                  {/* Right: Stats, Plans, Tasks */}
                   <div className="no-print w-full flex-shrink-0">
                     <StatsInterface
                       tasks={tasks}
