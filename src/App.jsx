@@ -582,9 +582,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
   );
 };
 
-const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories, openManualModal }) => {
-  const [showStandard, setShowStandard] = useState(true);
-  const [showPlanActual, setShowPlanActual] = useState(true);
+const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories, openManualModal, showStandard, showPlanActual }) => {
 
   const processedTasks = useMemo(() => splitTasksAcrossDays(tasks), [tasks]);
   const processedPlans = useMemo(() => splitTasksAcrossDays(plans), [plans]);
@@ -599,37 +597,8 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
   const weekStartStr = toLocalDateString(weekDates[0]);
   const weekEndStr = toLocalDateString(weekDates[6]);
 
-  const moveWeek = (offset) => {
-    const d = parseLocalDate(viewDate);
-    d.setDate(d.getDate() + (offset * 7));
-    setViewDate(toLocalDateString(d));
-  };
-
-  const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
-  const btnSecondary = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all active:scale-[0.98]";
-  const btnPrimary = "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/50 transition-all active:scale-[0.98]";
-
   return (
     <div className="w-full">
-      <div className={`no-print w-full flex flex-wrap gap-4 items-center justify-between mb-8 p-6 rounded-3xl ${glassCard}`}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1">
-            <button onClick={() => moveWeek(-1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronLeft size={16} /></button>
-            <span className="px-3 text-sm font-mono font-medium text-slate-600 dark:text-slate-300">{weekStartStr} ~ {weekEndStr}</span>
-            <button onClick={() => moveWeek(1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronRight size={16} /></button>
-          </div>
-
-          <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-600/50 pl-4 ml-2">
-            <button onClick={() => setShowStandard(!showStandard)} className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${showStandard ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-              {showStandard ? <Eye size={14} /> : <EyeOff size={14} />} 极简版
-            </button>
-            <button onClick={() => setShowPlanActual(!showPlanActual)} className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${showPlanActual ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-              {showPlanActual ? <Eye size={14} /> : <EyeOff size={14} />} 计划版
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="flex gap-8 items-start">
         <div className="print-area flex justify-center flex-1">
           <PrintStyles />
@@ -641,6 +610,42 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
       <div className="no-print w-full text-center text-sm text-gray-400 mt-4 pb-12">
         打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
         <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 14:10</div>
+      </div>
+    </div>
+  );
+};
+
+const DateNavigator = ({ viewDate, setViewDate, showStandard, setShowStandard, showPlanActual, setShowPlanActual }) => {
+  const startOfWeek = getStartOfWeek(viewDate);
+  const weekStartStr = toLocalDateString(startOfWeek);
+  const weekEnd = new Date(startOfWeek);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekEndStr = toLocalDateString(weekEnd);
+
+  const moveWeek = (offset) => {
+    const d = parseLocalDate(viewDate);
+    d.setDate(d.getDate() + (offset * 7));
+    setViewDate(toLocalDateString(d));
+  };
+
+  const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
+
+  return (
+    <div className={`mt-6 no-print w-full flex flex-col gap-4 items-center justify-between p-6 rounded-3xl ${glassCard}`}>
+      <div className="flex items-center gap-4 w-full justify-between">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1 flex-1 justify-between">
+          <button onClick={() => moveWeek(-1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronLeft size={16} /></button>
+          <span className="px-3 text-sm font-mono font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">{weekStartStr} ~ {weekEndStr}</span>
+          <button onClick={() => moveWeek(1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronRight size={16} /></button>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-700 pt-4 w-full justify-center">
+        <button onClick={() => setShowStandard(!showStandard)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-all ${showStandard ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+          {showStandard ? <Eye size={14} /> : <EyeOff size={14} />} 极简版
+        </button>
+        <button onClick={() => setShowPlanActual(!showPlanActual)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-all ${showPlanActual ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+          {showPlanActual ? <Eye size={14} /> : <EyeOff size={14} />} 计划版
+        </button>
       </div>
     </div>
   );
@@ -1022,8 +1027,12 @@ function App() {
     startTime: '09:00',
     endTime: '10:00',
     categoryId: DEFAULT_CATEGORIES[0].id,
+    categoryId: DEFAULT_CATEGORIES[0].id,
     type: 'actual'
   });
+
+  const [showStandard, setShowStandard] = useState(true);
+  const [showPlanActual, setShowPlanActual] = useState(true);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1426,6 +1435,16 @@ function App() {
                     togglePiP={togglePiP}
                     isPiPActive={false}
                   />
+                  {!isMiniMode && (
+                    <DateNavigator
+                      viewDate={viewDate}
+                      setViewDate={setViewDate}
+                      showStandard={showStandard}
+                      setShowStandard={setShowStandard}
+                      showPlanActual={showPlanActual}
+                      setShowPlanActual={setShowPlanActual}
+                    />
+                  )}
                 </div>
               )}
 
@@ -1465,36 +1484,30 @@ function App() {
 
               {!isMiniMode && (
                 <div className="xl:col-span-8 space-y-8 animate-fade-in-up w-full">
-                  {/* Flex container for Chart + Stats */}
-                  <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
-                    <div className="flex-1 w-full min-w-0">
-                      {/* Navigation Header for Dashboard */}
-                      <div className="no-print flex justify-end mb-4">
-                        {/* Old Printer Button Removed */}
-                      </div>
-                      <WeeklyReportInterface
-                        viewDate={viewDate}
-                        setViewDate={setViewDate}
-                        tasks={tasks}
-                        plans={plans}
-                        categories={categories}
-                        openManualModal={openManualModal}
-                      />
-                    </div>
+                  {/* Top: Weekly Report Strips */}
+                  <WeeklyReportInterface
+                    viewDate={viewDate}
+                    setViewDate={setViewDate}
+                    tasks={tasks}
+                    plans={plans}
+                    categories={categories}
+                    openManualModal={openManualModal}
+                    showStandard={showStandard}
+                    showPlanActual={showPlanActual}
+                  />
 
-                    {/* Stats Panel - Moved here to be side-by-side on XL, stacked on smaller */}
-                    <div className="no-print w-full xl:w-80 flex-shrink-0">
-                      <StatsInterface
-                        tasks={tasks}
-                        categories={categories}
-                        weekStartStr={getStartOfWeek(viewDate).toISOString().split('T')[0]}
-                        weekEndStr={(() => {
-                          const d = getStartOfWeek(viewDate);
-                          d.setDate(d.getDate() + 6);
-                          return d.toISOString().split('T')[0];
-                        })()}
-                      />
-                    </div>
+                  {/* Middle: Stats */}
+                  <div className="no-print w-full flex-shrink-0">
+                    <StatsInterface
+                      tasks={tasks}
+                      categories={categories}
+                      weekStartStr={getStartOfWeek(viewDate).toISOString().split('T')[0]}
+                      weekEndStr={(() => {
+                        const d = getStartOfWeek(viewDate);
+                        d.setDate(d.getDate() + 6);
+                        return d.toISOString().split('T')[0];
+                      })()}
+                    />
                   </div>
 
                   <div className="w-full no-print space-y-6">
