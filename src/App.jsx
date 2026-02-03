@@ -1530,9 +1530,13 @@ function App() {
               )}
             </div>
           </div>
-      {isMiniMode && !pipWindow && <div className="fixed inset-0 pointer-events-none no-print"></div>}
+            </div>
+    </div>
+  )
+}
       </div >
-      );
+    </div >
+  );
 }
 
-      export default App;
+export default App;
