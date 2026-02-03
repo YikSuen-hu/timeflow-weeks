@@ -5,7 +5,7 @@ import {
   Play, Square, Maximize2, Minimize2, Printer, Trash2,
   Clock, ChevronRight, ChevronLeft, CheckCircle, Plus,
   Edit2, X, Save, Settings, RotateCcw, Zap, Eye, EyeOff, Moon, Sun,
-  BarChart2, PieChart, Calendar, PictureInPicture2, Move
+  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon
 } from 'lucide-react';
 
 // --- 1. Styles & Constants ---
