@@ -432,8 +432,8 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
       {/* Defined thin line styles for print consistency */}
       <style>{`
-        .print-thin-border { border-width: 0.1px; }
-        @media print { .print-thin-border { border-width: 0.1px; } }
+        .print-thin-border { border-width: 0.25px; border-color: rgba(150, 150, 150, 0.3); }
+        @media print { .print-thin-border { border-width: 0.25px; border-color: rgba(150, 150, 150, 0.3); } }
       `}</style>
       <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
@@ -441,8 +441,8 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
           return (
             <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '4mm', height: '8mm' }}>
-              <div className="text-[6px] font-bold text-gray-400 leading-none">{dayLabel}</div>
-              <div className={`text-[8px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
+              <div className="text-[8px] font-bold text-gray-400 leading-none">{dayLabel}</div>
+              <div className={`text-[10px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
                 {dateObj.getDate()}
               </div>
             </div>
@@ -450,7 +450,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
         })}
       </div>
       <div className="flex relative w-full border-t border-gray-800">
-        <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
+        <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[8px] text-gray-400 font-mono text-right pr-1">
           {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
             <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
           ))}
@@ -464,13 +464,13 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines (4mm strict) - Ultra thin for print */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.1px] border-gray-100 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full border-b-[0.25px] border-gray-200 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             {/* 1AM Divider */}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.1px] border-gray-100 print-thin-border" style={{ left: `${(i + 1) * 4}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full border-r-[0.25px] border-gray-200 print-thin-border" style={{ left: `${(i + 1) * 4}mm` }}></div>
             ))}
           </div>
 
@@ -506,8 +506,8 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
           return (
             <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '8mm', height: '8mm' }}>
-              <div className="text-[6px] font-bold text-gray-400 leading-none">{dayLabel}</div>
-              <div className={`text-[8px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
+              <div className="text-[8px] font-bold text-gray-400 leading-none">{dayLabel}</div>
+              <div className={`text-[10px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
                 {dateObj.getDate()}
               </div>
               <div className="flex justify-between px-[1mm] mt-[1px]">
@@ -519,7 +519,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
         })}
       </div>
       <div className="flex relative w-full border-t border-gray-800">
-        <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
+        <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[8px] text-gray-400 font-mono text-right pr-1">
           {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
             <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
           ))}
@@ -533,13 +533,13 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.1px] border-gray-100 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full border-b-[0.25px] border-gray-200 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
 
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.1px] border-gray-100 print-thin-border" style={{ left: `${(i + 1) * 8}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full border-r-[0.25px] border-gray-200 print-thin-border" style={{ left: `${(i + 1) * 8}mm` }}></div>
             ))}
             {weekDates.map((_, i) => (
               <div key={`vld-${i}`} className="absolute h-full border-r-[0.25px] border-dotted border-gray-200" style={{ left: `${i * 8 + 4}mm` }}></div>
@@ -762,7 +762,7 @@ const TimerInterface = ({
         <div className="text-center mb-8 relative group">
           <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-4 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
             <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
-            <span className={`text-lg font-medium text-slate-400 mb-2 w-16 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
+            <span className={`text-lg font-medium text-slate-400 mb-2 w-24 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
           </div>
@@ -1357,7 +1357,7 @@ function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-dot-pattern text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 bg-dot-pattern text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       <PrintStyles />
 
       {/* Side Navigation */}
