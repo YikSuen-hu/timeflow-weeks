@@ -619,10 +619,6 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
             </button>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={openManualModal} className={`${btnSecondary} flex items-center gap-2 px-4 py-2 rounded-xl text-sm`}><Plus size={16} /> 补登/计划</button>
-          <button onClick={() => window.print()} className={`${btnPrimary} flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold`}><Printer size={16} /> 打印</button>
-        </div>
       </div>
 
       <div className="flex gap-8 items-start">
@@ -761,7 +757,7 @@ const TimerInterface = ({
         <div className="text-center mb-8 relative group">
           <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
             {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
-            <span className={`text-sm font-medium text-slate-400 ml-2 ${isMiniMode || isPiPActive ? 'block mt-[-5px]' : ''}`}>
+            <span className={`text-sm font-medium text-slate-400 ml-2 w-12 inline-block text-left ${isMiniMode || isPiPActive ? 'block mt-[-5px]' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
           </div>
@@ -790,19 +786,27 @@ const TimerInterface = ({
                 onSelect={setSelectedCategoryId}
                 onOpenSettings={() => setIsCategoryModalOpen(true)}
               />
-              <div className="flex gap-3 mt-4">
+              <div className="mt-4">
                 <input
                   type="text"
                   value={taskName}
                   onChange={(e) => setTaskName(e.target.value)}
-                  placeholder="主任务..."
-                  className={`flex-1 px-5 py-4 text-lg ${inputStyle}`}
+                  placeholder="What's your focus?"
+                  className={`w-full px-5 py-4 text-lg ${inputStyle}`}
                   onKeyDown={(e) => e.key === 'Enter' && startTimer()}
                 />
-                <button onClick={openManualModal} className={`${btnSecondary} px-4 rounded-xl`} title="补登">
-                  <Edit2 size={20} />
+              </div>
+
+              {/* Tools Row */}
+              <div className="flex gap-2 mt-3">
+                <button onClick={openManualModal} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="补登/计划">
+                  <Edit2 size={16} /> 补登 / 计划
+                </button>
+                <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="打印周报">
+                  <Printer size={16} /> 打印周报
                 </button>
               </div>
+
               <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full mt-4 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${btnPrimary} disabled:opacity-50`}>
                 <Play size={20} fill="currentColor" /> 开始专注
               </button>
@@ -1025,16 +1029,19 @@ function App() {
     }
   }, []);
 
+  // Sync Dark Mode to DOM
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      if (pipWindow) {
-        pipWindow.document.documentElement.classList.add('dark');
-        pipWindow.document.body.classList.add('dark');
-      }
     } else {
       document.documentElement.classList.remove('dark');
-      if (pipWindow) {
+    }
+    // Sync PiP if active
+    if (pipWindow) {
+      if (isDarkMode) {
+        pipWindow.document.documentElement.classList.add('dark');
+        pipWindow.document.body.classList.add('dark');
+      } else {
         pipWindow.document.documentElement.classList.remove('dark');
         pipWindow.document.body.classList.remove('dark');
       }
@@ -1447,12 +1454,7 @@ function App() {
                     <div className="flex-1 w-full min-w-0">
                       {/* Navigation Header for Dashboard */}
                       <div className="no-print flex justify-end mb-4">
-                        <button
-                          onClick={() => setCurrentPage('printer')}
-                          className="flex items-center gap-2 px-4 py-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors font-bold text-sm"
-                        >
-                          <Printer size={16} /> 照片打印工具
-                        </button>
+                        {/* Old Printer Button Removed */}
                       </div>
                       <WeeklyReportInterface
                         viewDate={viewDate}
