@@ -430,6 +430,11 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
 
   return (
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
+      {/* Defined thin line styles for print consistency */}
+      <style>{`
+        .print-thin-border { border-width: 0.1px; }
+        @media print { .print-thin-border { border-width: 0.1px; } }
+      `}</style>
       <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
           const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
@@ -437,7 +442,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           return (
             <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '4mm', height: '8mm' }}>
               <div className="text-[6px] font-bold text-gray-400 leading-none">{dayLabel}</div>
-              <div className={`text-[7px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
+              <div className={`text-[8px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
                 {dateObj.getDate()}
               </div>
             </div>
@@ -457,15 +462,15 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
         <div className="relative" style={{ width: '28mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
           {/* Background Grid */}
           <div className="absolute inset-0 z-0 pointer-events-none">
-            {/* Horizontal Lines (4mm strict) */}
+            {/* Horizontal Lines (4mm strict) - Ultra thin for print */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.1px] border-gray-100" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full border-b-[0.1px] border-gray-100 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             {/* 1AM Divider */}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.1px] border-gray-100" style={{ left: `${(i + 1) * 4}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full border-r-[0.1px] border-gray-100 print-thin-border" style={{ left: `${(i + 1) * 4}mm` }}></div>
             ))}
           </div>
 
@@ -502,7 +507,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
           return (
             <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '8mm', height: '8mm' }}>
               <div className="text-[6px] font-bold text-gray-400 leading-none">{dayLabel}</div>
-              <div className={`text-[7px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
+              <div className={`text-[8px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
                 {dateObj.getDate()}
               </div>
               <div className="flex justify-between px-[1mm] mt-[1px]">
@@ -528,13 +533,13 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines */}
             {Array.from({ length: horizontalGridLines }).map((_, i) => (
-              <div key={`h-${i}`} className="absolute w-full border-b-[0.25px] border-gray-200" style={{ top: `${(i + 1) * 4}mm` }}></div>
+              <div key={`h-${i}`} className="absolute w-full border-b-[0.1px] border-gray-100 print-thin-border" style={{ top: `${(i + 1) * 4}mm` }}></div>
             ))}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
 
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full border-r-[0.25px] border-gray-200" style={{ left: `${(i + 1) * 8}mm` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full border-r-[0.1px] border-gray-100 print-thin-border" style={{ left: `${(i + 1) * 8}mm` }}></div>
             ))}
             {weekDates.map((_, i) => (
               <div key={`vld-${i}`} className="absolute h-full border-r-[0.25px] border-dotted border-gray-200" style={{ left: `${i * 8 + 4}mm` }}></div>
@@ -615,7 +620,7 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
               {showStandard ? <Eye size={14} /> : <EyeOff size={14} />} 极简版
             </button>
             <button onClick={() => setShowPlanActual(!showPlanActual)} className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${showPlanActual ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-              {showPlanActual ? <Eye size={14} /> : <EyeOff size={14} />} 计划实绩版
+              {showPlanActual ? <Eye size={14} /> : <EyeOff size={14} />} 计划版
             </button>
           </div>
         </div>
@@ -757,7 +762,7 @@ const TimerInterface = ({
         <div className="text-center mb-8 relative group">
           <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-4 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
             <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
-            <span className={`text-sm font-medium text-slate-400 mb-2 ${isMiniMode || isPiPActive ? '' : ''}`}>
+            <span className={`text-lg font-medium text-slate-400 mb-2 w-16 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
           </div>
@@ -1016,7 +1021,13 @@ function App() {
     type: 'actual'
   });
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('timeflow_dark_mode');
+      return saved ? JSON.parse(saved) : true; // Default to dark or light as preferred
+    }
+    return false;
+  });
 
   const timerRef = useRef(null);
   const subTimerRef = useRef(null);
@@ -1026,16 +1037,7 @@ function App() {
     return () => clearInterval(clockInterval);
   }, []);
 
-  useEffect(() => {
-    const savedMode = localStorage.getItem('timeflow_dark_mode');
-    if (savedMode !== null) {
-      setIsDarkMode(JSON.parse(savedMode));
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
-    }
-  }, []);
-
-  // Sync Dark Mode to DOM
+  // Sync Dark Mode with DOM
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -1043,8 +1045,10 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('timeflow_dark_mode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
 
-    // Sync PiP if active
+  // Sync PiP if active
+  useEffect(() => {
     if (pipWindow) {
       if (isDarkMode) {
         pipWindow.document.documentElement.classList.add('dark');
