@@ -40,7 +40,7 @@ const PrintStyles = () => (
       .print-chart-container {
         background: white;
         box-shadow: none !important;
-        border: 1px solid #eee; 
+        border: none !important; 
       }
     }
     
@@ -755,9 +755,9 @@ const TimerInterface = ({
       {/* Main Content */}
       <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-8 pb-10'}`}>
         <div className="text-center mb-8 relative group">
-          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
-            {formatDuration(elapsed).replace('h ', ':').replace('m', '')}
-            <span className={`text-sm font-medium text-slate-400 ml-2 w-12 inline-block text-left ${isMiniMode || isPiPActive ? 'block mt-[-5px]' : ''}`}>
+          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-baseline justify-center gap-1 ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
+            <span>{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
+            <span className={`text-sm font-medium text-slate-400 ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
           </div>
