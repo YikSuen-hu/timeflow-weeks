@@ -1207,9 +1207,19 @@ function App() {
 
   const saveManualEntry = () => {
     if (!manualForm.name) return alert('请输入任务名称');
-    const startDateTime = new Date(`${manualForm.date}T${manualForm.startTime}`);
-    const endDateTime = new Date(`${manualForm.date}T${manualForm.endTime}`);
-    if (endDateTime <= startDateTime) return alert('结束时间必须晚于开始时间');
+
+    // Explicitly construct dates in local time to avoid any timezone shifts
+    const [y, m, d] = manualForm.date.split('-').map(Number);
+    const [h, min] = manualForm.startTime.split(':').map(Number);
+    const [eh, emin] = manualForm.endTime.split(':').map(Number);
+
+    const startDateTime = new Date(y, m - 1, d, h, min, 0);
+    let endDateTime = new Date(y, m - 1, d, eh, emin, 0);
+
+    // Handle overnight tasks (end time next day)
+    if (endDateTime <= startDateTime) {
+      endDateTime = new Date(y, m - 1, d + 1, eh, emin, 0);
+    }
 
     const duration = Math.floor((endDateTime - startDateTime) / 1000);
     const newTask = {
