@@ -429,8 +429,8 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
 
   return (
-    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '38mm', minHeight: '180mm' }}>
-      <div className="flex w-full pl-[10mm] mb-1">
+    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
+      <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
           const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
@@ -445,7 +445,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
         })}
       </div>
       <div className="flex relative w-full border-t border-gray-800">
-        <div className="w-[10mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
+        <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
           {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
             <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
           ))}
@@ -485,7 +485,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           })}
         </div>
       </div>
-      <div className="w-full pl-[10mm] mt-1 text-[6px] text-gray-300 font-mono text-center">Actuals Only (38mm)</div>
+      <div className="w-full pl-[5mm] mt-1 text-[6px] text-gray-300 font-mono text-center">Actuals Only (33mm)</div>
     </div>
   );
 };
@@ -494,8 +494,8 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
 
   return (
-    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '66mm', minHeight: '180mm' }}>
-      <div className="flex w-full pl-[10mm] mb-1">
+    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '61mm', minHeight: '180mm' }}>
+      <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
           const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
@@ -514,7 +514,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
         })}
       </div>
       <div className="flex relative w-full border-t border-gray-800">
-        <div className="w-[10mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
+        <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[6px] text-gray-400 font-mono text-right pr-1">
           {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
             <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
           ))}
@@ -568,7 +568,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
           })}
         </div>
       </div>
-      <div className="w-full pl-[10mm] mt-1 text-[6px] text-gray-300 font-mono text-center">Plan vs Actual (66mm)</div>
+      <div className="w-full pl-[5mm] mt-1 text-[6px] text-gray-300 font-mono text-center">Plan vs Actual (61mm)</div>
     </div>
   );
 };
