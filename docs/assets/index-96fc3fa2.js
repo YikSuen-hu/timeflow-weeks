@@ -103,11 +103,16 @@ Error generating stack: `+o.message+`
        background-image: radial-gradient(circle, rgba(150, 150, 150, 0.5) 0.5px, transparent 0.5px);
     }
     .horizontal-lines-4mm {
-      background-size: 100% 4mm;
-      background-image: linear-gradient(to bottom, rgba(150, 150, 150, 0.5) 0.25px, transparent 0.25px);
+      background-image: repeating-linear-gradient(to bottom, 
+        rgba(150, 150, 150, 0.5) 0, 
+        rgba(150, 150, 150, 0.5) 0.25px, 
+        transparent 0.25px, 
+        transparent 4mm
+      );
     }
     .vertical-line-thin {
       border-right-width: 0.25px !important;
+      border-right-style: solid !important;
       border-color: rgba(200, 200, 200, 0.8) !important;
     }
     .vertical-line-dotted {
