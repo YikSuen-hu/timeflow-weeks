@@ -432,8 +432,8 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
       {/* Defined thin line styles for print consistency */}
       <style>{`
-        .print-thin-border { border-width: 0.25px; border-color: rgba(150, 150, 150, 0.3); }
-        @media print { .print-thin-border { border-width: 0.25px; border-color: rgba(150, 150, 150, 0.3); } }
+        .print-thin-border { border-width: 0.1px; border-color: rgba(180, 180, 180, 0.15); }
+        @media print { .print-thin-border { border-width: 0.1px; border-color: rgba(180, 180, 180, 0.15); } }
       `}</style>
       <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
@@ -760,7 +760,7 @@ const TimerInterface = ({
       {/* Main Content */}
       <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-8 pb-10'}`}>
         <div className="text-center mb-8 relative group">
-          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-4 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
+          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-8 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
             <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
             <span className={`text-lg font-medium text-slate-400 mb-2 w-24 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
