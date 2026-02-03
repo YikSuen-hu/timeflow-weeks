@@ -429,15 +429,14 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
 
   return (
-    <div className="print-chart-container bg-white text-black relative flex flex-col items-center w-full print:w-[33mm]" style={{ minHeight: '180mm' }}>
+    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
       {/* Defined thin line styles for print consistency */}
       <style>{`
         .print-line-h { border-bottom: 0.25px solid rgba(0,0,0,0.1) !important; }
         .print-line-v { border-right: 0.25px solid rgba(0,0,0,0.1) !important; }
-        @media print {
+        @media print { 
           .print-line-h { border-bottom: 0.1px solid rgba(0,0,0,0.08) !important; }
           .print-line-v { border-right: 0.1px solid rgba(0,0,0,0.08) !important; }
-          .strip-grid-area { width: 28mm !important; }
         }
       `}</style>
       <div className="flex w-full pl-[5mm] mb-1">
@@ -445,7 +444,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
           const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
           return (
-            <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ height: '8mm' }}>
+            <div key={i} className="text-center flex flex-col justify-end" style={{ width: '4mm', height: '8mm' }}>
               <div className="text-[8px] font-bold text-gray-400 leading-none">{dayLabel}</div>
               <div className={`text-[10px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
                 {dateObj.getDate()}
@@ -464,7 +463,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
             <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
           ))}
         </div>
-        <div className="relative flex-1 strip-grid-area" style={{ height: `${TOTAL_HEIGHT_MM}mm` }}>
+        <div className="relative" style={{ width: '28mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
           {/* Background Grid */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines (4mm strict) - Ultra thin for print */}
@@ -473,9 +472,9 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
             ))}
             {/* 1AM Divider */}
             <div className="absolute w-full border-b-[0.5px] border-gray-400" style={{ top: `${HEIGHT_DAY_MM}mm` }}></div>
-            {/* Vertical Lines - Percentages */}
+            {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full print-line-v" style={{ left: `${(i + 1) * (100 / 7)}%` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full print-line-v" style={{ left: `${(i + 1) * 4}mm` }}></div>
             ))}
           </div>
 
@@ -484,7 +483,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
             const dayTasks = getTasksForDate(processedTasks, dateObj);
             const layout = getTaskLayout(dayTasks);
             return (
-              <div key={i} className="absolute h-full" style={{ left: `${i * (100 / 7)}%`, width: `${100 / 7}%` }}>
+              <div key={i} className="absolute h-full" style={{ left: `${i * 4}mm`, width: '4mm' }}>
                 {layout.map((item) => (
                   <div key={item.task.id} style={getTaskStyle(item, categories)} title={`${item.task.name}`}>
                     <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
@@ -504,21 +503,21 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
 
   return (
-    <div className="print-chart-container bg-white text-black relative flex flex-col items-center w-full print:w-[61mm]" style={{ minHeight: '180mm' }}>
+    <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '61mm', minHeight: '180mm' }}>
       <style>{`
-         @media print { .strip-grid-area-plan { width: 56mm !important; } }
+         @media print { }
       `}</style>
       <div className="flex w-full pl-[5mm] mb-1">
         {weekDates.map((dateObj, i) => {
           const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
           return (
-            <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ height: '8mm' }}>
+            <div key={i} className="text-center flex flex-col justify-end" style={{ width: '8mm', height: '8mm' }}>
               <div className="text-[8px] font-bold text-gray-400 leading-none">{dayLabel}</div>
               <div className={`text-[10px] font-mono leading-tight ${isToday ? 'font-bold text-black' : 'text-gray-600'}`}>
                 {dateObj.getDate()}
               </div>
-              <div className="flex justify-between px-[12%] mt-[1px]">
+              <div className="flex justify-between px-[1mm] mt-[1px]">
                 <span className="text-[4px] text-gray-300">P</span>
                 <span className="text-[4px] text-gray-300">A</span>
               </div>
@@ -536,7 +535,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
             <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
           ))}
         </div>
-        <div className="relative flex-1 strip-grid-area-plan" style={{ height: `${TOTAL_HEIGHT_MM}mm` }}>
+        <div className="relative" style={{ width: '56mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
           {/* Background Grid */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             {/* Horizontal Lines */}
@@ -547,10 +546,10 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
 
             {/* Vertical Lines */}
             {weekDates.map((_, i) => (
-              <div key={`vl-${i}`} className="absolute h-full print-line-v" style={{ left: `${(i + 1) * (100 / 7)}%` }}></div>
+              <div key={`vl-${i}`} className="absolute h-full print-line-v" style={{ left: `${(i + 1) * 8}mm` }}></div>
             ))}
             {weekDates.map((_, i) => (
-              <div key={`vld-${i}`} className="absolute h-full border-r-[0.25px] border-dotted border-gray-200" style={{ left: `${i * (100 / 7) + (100 / 7 / 2)}%` }}></div>
+              <div key={`vld-${i}`} className="absolute h-full border-r-[0.25px] border-dotted border-gray-200" style={{ left: `${i * 8 + 4}mm` }}></div>
             ))}
           </div>
 
@@ -561,15 +560,15 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
             const dayActuals = getTasksForDate(processedTasks, dateObj);
             const actualLayout = getTaskLayout(dayActuals);
             return (
-              <div key={i} className="absolute h-full" style={{ left: `${i * (100 / 7)}%`, width: `${100 / 7}%` }}>
-                <div className="absolute h-full left-0 top-0" style={{ width: '50%' }}>
+              <div key={i} className="absolute h-full" style={{ left: `${i * 8}mm`, width: '8mm' }}>
+                <div className="absolute h-full left-0 top-0" style={{ width: '4mm' }}>
                   {planLayout.map((item) => (
                     <div key={item.task.id} style={getTaskStyle(item, categories, true)} title={`Plan: ${item.task.name}`}>
                       <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
                     </div>
                   ))}
                 </div>
-                <div className="absolute h-full right-0 top-0" style={{ width: '50%' }}>
+                <div className="absolute h-full right-0 top-0" style={{ width: '4mm' }}>
                   {actualLayout.map((item) => (
                     <div key={item.task.id} style={getTaskStyle(item, categories, false)} title={`Actual: ${item.task.name}`}>
                       <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
@@ -603,8 +602,8 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
 
   return (
     <div className="w-full">
-      <div className="flex gap-8 items-start">
-        <div className="print-area flex justify-center flex-1">
+      <div className="flex gap-8 items-start justify-center overflow-visible">
+        <div className="print-area flex justify-center flex-1 origin-top transition-transform duration-300 scale-125">
           <PrintStyles />
           {showStandard && <StandardStrip weekDates={weekDates} processedTasks={processedTasks} categories={categories} />}
           {showPlanActual && <div className="ml-8"><PlanActualStrip weekDates={weekDates} processedTasks={processedTasks} processedPlans={processedPlans} categories={categories} /></div>}
@@ -613,7 +612,7 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
 
       <div className="no-print w-full text-center text-sm text-gray-400 mt-4 pb-12">
         打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
-        <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 14:10</div>
+        <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 23:00</div>
       </div>
     </div>
   );
