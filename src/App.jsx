@@ -1407,7 +1407,7 @@ function App() {
 
               {/* Timer Section - Render in Main Window OR via Portal in PiP */}
               {!pipWindow && (
-                <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'xl:col-span-4 xl:sticky xl:top-6'}`}>
+                <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'xl:col-span-3 xl:sticky xl:top-6'}`}>
                   <TimerInterface
                     isMiniMode={isMiniMode}
                     setIsMiniMode={setIsMiniMode}
