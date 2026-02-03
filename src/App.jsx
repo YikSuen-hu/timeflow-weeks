@@ -90,6 +90,18 @@ const TOTAL_HEIGHT_MM = HEIGHT_DAY_MM + HEIGHT_NIGHT_MM;
 
 // --- 2. Utilities ---
 
+const toLocalDateString = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const parseLocalDate = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
 const formatDuration = (seconds) => {
   if (isNaN(seconds)) return "0h 0m";
   const h = Math.floor(seconds / 3600);
@@ -105,8 +117,8 @@ const formatFullTime = (dateObj) => {
   return dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
-const getStartOfWeek = (date) => {
-  const d = new Date(date);
+const getStartOfWeek = (dateStr) => {
+  const d = parseLocalDate(dateStr);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   return new Date(d.setDate(diff));
@@ -144,7 +156,7 @@ const splitTasksAcrossDays = (taskList) => {
           startTime: currentSegmentStart.toISOString(),
           endTime: currentSegmentEnd.toISOString(),
           duration: (currentSegmentEnd - currentSegmentStart) / 1000,
-          date: logicalDayStart.toISOString().split('T')[0]
+          date: toLocalDateString(logicalDayStart)
         });
       }
       if (currentSegmentEnd.getTime() <= currentSegmentStart.getTime()) break;
@@ -232,7 +244,7 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
 };
 
 const getTasksForDate = (taskList, dateObj) => {
-  const targetDateStr = dateObj.toISOString().split('T')[0];
+  const targetDateStr = toLocalDateString(dateObj);
   return taskList.filter(t => t.date === targetDateStr).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 };
 
@@ -381,7 +393,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '38mm', minHeight: '180mm' }}>
       <div className="flex w-full pl-[10mm] mb-1">
         {weekDates.map((dateObj, i) => {
-          const isToday = dateObj.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+          const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
           return (
             <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '4mm', height: '8mm' }}>
@@ -435,7 +447,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '66mm', minHeight: '180mm' }}>
       <div className="flex w-full pl-[10mm] mb-1">
         {weekDates.map((dateObj, i) => {
-          const isToday = dateObj.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+          const isToday = toLocalDateString(dateObj) === toLocalDateString(new Date());
           const dayLabel = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][dateObj.getDay()];
           return (
             <div key={i} className="flex-1 text-center flex flex-col justify-end" style={{ width: '8mm', height: '8mm' }}>
@@ -514,13 +526,13 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
     return d;
   });
 
-  const weekStartStr = weekDates[0].toISOString().split('T')[0];
-  const weekEndStr = weekDates[6].toISOString().split('T')[0];
+  const weekStartStr = toLocalDateString(weekDates[0]);
+  const weekEndStr = toLocalDateString(weekDates[6]);
 
   const moveWeek = (offset) => {
-    const d = new Date(viewDate);
+    const d = parseLocalDate(viewDate);
     d.setDate(d.getDate() + (offset * 7));
-    setViewDate(d.toISOString().split('T')[0]);
+    setViewDate(toLocalDateString(d));
   };
 
   const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
@@ -892,7 +904,7 @@ function App() {
 
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewDate, setViewDate] = useState(toLocalDateString(new Date()));
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -903,7 +915,7 @@ function App() {
 
   const [manualForm, setManualForm] = useState({
     name: '',
-    date: new Date().toISOString().split('T')[0],
+    date: toLocalDateString(new Date()),
     startTime: '09:00',
     endTime: '10:00',
     categoryId: DEFAULT_CATEGORIES[0].id,
@@ -1094,7 +1106,7 @@ function App() {
       ...currentTask,
       endTime,
       duration: elapsed,
-      date: new Date().toISOString().split('T')[0]
+      date: toLocalDateString(new Date())
     };
     setTasks([completedTask, ...tasks]);
     setCurrentTask(null);
@@ -1131,7 +1143,7 @@ function App() {
       ...currentSubTask,
       endTime,
       duration: subElapsed,
-      date: new Date().toISOString().split('T')[0]
+      date: toLocalDateString(new Date())
     };
     setTasks([completedTask, ...tasks]);
     setCurrentSubTask(null);
