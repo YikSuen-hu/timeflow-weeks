@@ -1401,13 +1401,13 @@ function App() {
         {currentPage === 'printer' ? (
           <PhotoPrinter onBack={() => setCurrentPage('dashboard')} />
         ) : (
-          <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto">
-            <div className={`grid grid-cols-1 xl:grid-cols-12 gap-8 items-start`}>
+          <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto decoration-clone">
+            <div className={`flex flex-col xl:flex-row gap-6 items-start`}>
 
 
               {/* Timer Section - Render in Main Window OR via Portal in PiP */}
               {!pipWindow && (
-                <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'xl:col-span-3 xl:sticky xl:top-6'}`}>
+                <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'w-full xl:w-[350px] flex-shrink-0 xl:sticky xl:top-6'}`}>
                   <TimerInterface
                     isMiniMode={isMiniMode}
                     setIsMiniMode={setIsMiniMode}
@@ -1483,7 +1483,7 @@ function App() {
 
 
               {!isMiniMode && (
-                <div className="xl:col-span-6 space-y-8 animate-fade-in-up w-full">
+                <div className="flex-1 w-full min-w-0 space-y-8 animate-fade-in-up">
                   {/* Top: Weekly Report Strips */}
                   <WeeklyReportInterface
                     viewDate={viewDate}
@@ -1499,7 +1499,7 @@ function App() {
               )}
 
               {!isMiniMode && (
-                <div className="xl:col-span-3 space-y-6 animate-fade-in-up w-full">
+                <div className="w-full xl:w-[360px] flex-shrink-0 space-y-6 animate-fade-in-up">
                   {/* Right: Stats, Plans, Tasks */}
                   <div className="no-print w-full flex-shrink-0">
                     <StatsInterface
