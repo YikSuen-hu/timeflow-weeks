@@ -1055,7 +1055,6 @@ function App() {
     startTime: '09:00',
     endTime: '10:00',
     categoryId: DEFAULT_CATEGORIES[0].id,
-    categoryId: DEFAULT_CATEGORIES[0].id,
     type: 'actual'
   });
 
