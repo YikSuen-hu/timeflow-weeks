@@ -22,7 +22,7 @@ set "timestamp=%date:/=-% %time::=-%"
 git commit -m "Auto-deploy: %timestamp%"
 
 echo [5/5] Pushing to GitHub (main)...
-git push origin main
+git push origin main --force
 
 echo ==========================================
 echo Deployment Success! 
