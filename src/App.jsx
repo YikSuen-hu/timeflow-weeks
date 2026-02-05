@@ -425,7 +425,7 @@ const StatsInterface = ({ tasks, categories, weekStartStr, weekEndStr }) => {
   );
 };
 
-const StandardStrip = ({ weekDates, processedTasks, categories }) => {
+const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal }) => {
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
 
   return (
@@ -485,7 +485,13 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
             return (
               <div key={i} className="absolute h-full" style={{ left: `${i * 4}mm`, width: '4mm' }}>
                 {layout.map((item) => (
-                  <div key={item.task.id} style={getTaskStyle(item, categories)} title={`${item.task.name}`}>
+                  <div
+                    key={item.task.id}
+                    style={getTaskStyle(item, categories)}
+                    title={`${item.task.name}`}
+                    className="cursor-pointer hover:brightness-90 transition-all z-10"
+                    onClick={() => openManualModal('actual', item.task)}
+                  >
                     <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
                   </div>
                 ))}
@@ -499,7 +505,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories }) => {
   );
 };
 
-const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories }) => {
+const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories, openManualModal }) => {
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
 
   return (
@@ -563,14 +569,26 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
               <div key={i} className="absolute h-full" style={{ left: `${i * 8}mm`, width: '8mm' }}>
                 <div className="absolute h-full left-0 top-0" style={{ width: '4mm' }}>
                   {planLayout.map((item) => (
-                    <div key={item.task.id} style={getTaskStyle(item, categories, true)} title={`Plan: ${item.task.name}`}>
+                    <div
+                      key={item.task.id}
+                      style={getTaskStyle(item, categories, true)}
+                      title={`Plan: ${item.task.name}`}
+                      className="cursor-pointer hover:brightness-90 transition-all z-10"
+                      onClick={() => openManualModal('plan', item.task)}
+                    >
                       <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
                     </div>
                   ))}
                 </div>
                 <div className="absolute h-full right-0 top-0" style={{ width: '4mm' }}>
                   {actualLayout.map((item) => (
-                    <div key={item.task.id} style={getTaskStyle(item, categories, false)} title={`Actual: ${item.task.name}`}>
+                    <div
+                      key={item.task.id}
+                      style={getTaskStyle(item, categories, false)}
+                      title={`Actual: ${item.task.name}`}
+                      className="cursor-pointer hover:brightness-90 transition-all z-10"
+                      onClick={() => openManualModal('actual', item.task)}
+                    >
                       <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
                     </div>
                   ))}
@@ -605,8 +623,8 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
       <div className="flex gap-8 items-start justify-center overflow-visible">
         <div className="print-area flex justify-center flex-1 origin-top transition-transform duration-300 scale-125">
           <PrintStyles />
-          {showStandard && <StandardStrip weekDates={weekDates} processedTasks={processedTasks} categories={categories} />}
-          {showPlanActual && <div className="ml-8"><PlanActualStrip weekDates={weekDates} processedTasks={processedTasks} processedPlans={processedPlans} categories={categories} /></div>}
+          {showStandard && <StandardStrip weekDates={weekDates} processedTasks={processedTasks} categories={categories} openManualModal={openManualModal} />}
+          {showPlanActual && <div className="ml-8"><PlanActualStrip weekDates={weekDates} processedTasks={processedTasks} processedPlans={processedPlans} categories={categories} openManualModal={openManualModal} /></div>}
         </div>
       </div>
 
@@ -921,7 +939,7 @@ const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, cat
   );
 };
 
-const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm, setManualForm, saveManualEntry, categories }) => {
+const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm, setManualForm, saveManualEntry, deleteManualEntry, categories }) => {
   if (!isManualModalOpen) return null;
   const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
   return (
@@ -929,7 +947,7 @@ const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm,
       <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-slate-100 dark:border-slate-700">
         <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
           <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <Edit2 size={18} /> 补登 / 计划
+            <Edit2 size={18} /> {manualForm.id ? '编辑任务 / 计划' : '补登 / 计划'}
           </h3>
           <button onClick={() => setIsManualModalOpen(false)} className="text-slate-400 hover:text-slate-600">
             <X size={20} />
@@ -957,7 +975,14 @@ const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm,
             </div>
           </div>
           <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">任务名称</label><input type="text" value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} placeholder="做了什么？" className={`w-full p-3 ${inputStyle}`} /></div>
-          <button onClick={saveManualEntry} className={`w-full py-3 text-white rounded-xl font-bold mt-4 flex justify-center gap-2 shadow-lg transition-transform active:scale-[0.98] ${manualForm.type === 'plan' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'}`}><Save size={18} /> {manualForm.type === 'plan' ? '保存计划' : '保存实绩'}</button>
+          <div className="flex gap-4">
+            {manualForm.id && (
+              <button onClick={deleteManualEntry} className="px-4 py-3 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl font-bold transition-colors">
+                <Trash2 size={18} />
+              </button>
+            )}
+            <button onClick={saveManualEntry} className={`flex-1 py-3 text-white rounded-xl font-bold flex justify-center gap-2 shadow-lg transition-transform active:scale-[0.98] ${manualForm.type === 'plan' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'}`}><Save size={18} /> {manualForm.id ? '更新' : (manualForm.type === 'plan' ? '保存计划' : '保存实绩')}</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1324,15 +1349,32 @@ function App() {
     if (confirm('恢复默认分类？')) setCategories(DEFAULT_CATEGORIES);
   };
 
-  const openManualModal = (type = 'actual') => {
-    setManualForm({
-      name: '',
-      date: viewDate,
-      startTime: '09:00',
-      endTime: '10:00',
-      categoryId: categories[0]?.id || '',
-      type: type
-    });
+  const openManualModal = (type = 'actual', task = null) => {
+    if (task) {
+      const start = new Date(task.startTime);
+      const end = new Date(task.endTime);
+      const fmt = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+      setManualForm({
+        id: task.id,
+        name: task.name,
+        date: task.date,
+        startTime: fmt(start),
+        endTime: fmt(end),
+        categoryId: task.categoryId || task.category?.id || categories[0]?.id,
+        type: type
+      });
+    } else {
+      setManualForm({
+        id: null,
+        name: '',
+        date: viewDate,
+        startTime: '09:00',
+        endTime: '10:00',
+        categoryId: categories[0]?.id || '',
+        type: type
+      });
+    }
     setIsManualModalOpen(true);
   };
 
@@ -1354,7 +1396,7 @@ function App() {
 
     const duration = Math.floor((endDateTime - startDateTime) / 1000);
     const newTask = {
-      id: generateId(),
+      id: manualForm.id || generateId(),
       name: manualForm.name,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
@@ -1364,12 +1406,34 @@ function App() {
     };
 
     if (manualForm.type === 'plan') {
-      setPlans([newTask, ...plans]);
+      if (manualForm.id) {
+        setPlans(plans.map(p => p.id === manualForm.id ? newTask : p));
+      } else {
+        setPlans([newTask, ...plans]);
+      }
     } else {
-      setTasks([newTask, ...tasks]);
+      if (manualForm.id) {
+        setTasks(tasks.map(t => t.id === manualForm.id ? newTask : t));
+      } else {
+        setTasks([newTask, ...tasks]);
+      }
     }
 
     setIsManualModalOpen(false);
+  };
+
+  const deleteManualEntry = () => {
+    if (!manualForm.id) return;
+    if (confirm('确定要删除这个任务吗？')) {
+      if (manualForm.type === 'plan') {
+        const newPlans = plans.filter(p => p.id !== manualForm.id);
+        setPlans(newPlans);
+      } else {
+        const newTasks = tasks.filter(t => t.id !== manualForm.id);
+        setTasks(newTasks);
+      }
+      setIsManualModalOpen(false);
+    }
   };
 
   return (
@@ -1387,6 +1451,7 @@ function App() {
           manualForm={manualForm}
           setManualForm={setManualForm}
           saveManualEntry={saveManualEntry}
+          deleteManualEntry={deleteManualEntry}
           categories={categories}
         />
 
