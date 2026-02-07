@@ -629,10 +629,6 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
         </div>
       </div>
 
-      <div className="no-print w-full text-center text-sm text-gray-400 mt-4 pb-12">
-        打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
-        <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 23:00</div>
-      </div>
     </div>
   );
 };
@@ -841,8 +837,8 @@ const TimerInterface = ({
                 <button onClick={() => openManualModal('plan')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="计划预定">
                   <Calendar size={16} /> 计划
                 </button>
-                <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="打印周报">
-                  <Printer size={16} /> 打印时间轴
+                <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="打印">
+                  <Printer size={16} /> 打印
                 </button>
               </div>
 
@@ -968,7 +964,19 @@ const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm,
             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">分类</label>
             <div className="flex gap-2 flex-wrap">
               {categories.map(cat => (
-                <button key={cat.id} onClick={() => setManualForm({ ...manualForm, categoryId: cat.id })} style={{ borderColor: manualForm.categoryId === cat.id ? cat.color : 'transparent', backgroundColor: manualForm.categoryId === cat.id ? `${cat.color}20` : 'transparent', color: manualForm.categoryId === cat.id ? cat.color : '#64748b' }} className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 ${manualForm.categoryId !== cat.id ? 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700' : ''}`}>
+                <button
+                  key={cat.id}
+                  onClick={() => !manualForm.categoryLocked && setManualForm({ ...manualForm, categoryId: cat.id })}
+                  disabled={manualForm.categoryLocked}
+                  style={{
+                    borderColor: manualForm.categoryId === cat.id ? cat.color : 'transparent',
+                    backgroundColor: manualForm.categoryId === cat.id ? `${cat.color}20` : 'transparent',
+                    color: manualForm.categoryId === cat.id ? cat.color : '#64748b',
+                    opacity: manualForm.categoryLocked && manualForm.categoryId !== cat.id ? 0.3 : 1,
+                    cursor: manualForm.categoryLocked ? 'not-allowed' : 'pointer'
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 ${manualForm.categoryId !== cat.id ? 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700' : ''}`}
+                >
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
                   {cat.name}
                 </button>
@@ -1368,7 +1376,8 @@ function App() {
         startTime: fmt(start),
         endTime: fmt(end),
         categoryId: task.categoryId || task.category?.id || categories[0]?.id,
-        type: type
+        type: type,
+        categoryLocked: false
       });
     } else {
       setManualForm({
@@ -1378,7 +1387,8 @@ function App() {
         startTime: '09:00',
         endTime: '10:00',
         categoryId: categories[0]?.id || '',
-        type: type
+        type: type,
+        categoryLocked: false
       });
     }
     setIsManualModalOpen(true);
@@ -1456,7 +1466,8 @@ function App() {
       date: viewDate,
       startTime: '09:00',
       endTime: '10:00',
-      type: 'plan'
+      type: 'plan',
+      categoryLocked: true // Lock category for sub-tasks as requested
     });
     setIsManualModalOpen(true);
   };
@@ -1701,6 +1712,12 @@ function App() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Global Footer for Dashboard */}
+            <div className="no-print w-full text-center text-sm text-gray-400 mt-12 pb-8">
+              打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
+              <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 23:00</div>
             </div>
           </div>
         )}
