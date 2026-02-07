@@ -5,8 +5,9 @@ import {
   Play, Square, Maximize2, Minimize2, Printer, Trash2,
   Clock, ChevronRight, ChevronLeft, CheckCircle, Plus,
   Edit2, X, Save, Settings, RotateCcw, Zap, Eye, EyeOff, Moon, Sun,
-  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon
+  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon, Layout
 } from 'lucide-react';
+import TaskBoard from './TaskBoard';
 
 // --- 1. Styles & Constants ---
 
@@ -994,6 +995,7 @@ const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm,
 const SideNav = ({ activePage, onNavigate }) => {
   const navItems = [
     { id: 'dashboard', icon: Calendar, label: '日程手账' },
+    { id: 'board', icon: Layout, label: '任务看板' },
     { id: 'printer', icon: Printer, label: '素材打印' },
   ];
 
@@ -1028,6 +1030,7 @@ function App() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [tasks, setTasks] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [kanbanTasks, setKanbanTasks] = useState([]);
 
   const [currentTask, setCurrentTask] = useState(null);
   const [taskName, setTaskName] = useState('');
@@ -1111,6 +1114,9 @@ function App() {
     const savedPlans = localStorage.getItem('timeflow_plans');
     if (savedPlans) setPlans(JSON.parse(savedPlans));
 
+    const savedKanban = localStorage.getItem('timeflow_kanban_tasks');
+    if (savedKanban) setKanbanTasks(JSON.parse(savedKanban));
+
     const savedCurrent = localStorage.getItem('timeflow_current');
     if (savedCurrent) {
       const parsed = JSON.parse(savedCurrent);
@@ -1130,6 +1136,7 @@ function App() {
   // Save Data
   useEffect(() => { localStorage.setItem('timeflow_tasks', JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => { localStorage.setItem('timeflow_plans', JSON.stringify(plans)); }, [plans]);
+  useEffect(() => { localStorage.setItem('timeflow_kanban_tasks', JSON.stringify(kanbanTasks)); }, [kanbanTasks]);
   useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
 
   useEffect(() => {
@@ -1435,6 +1442,23 @@ function App() {
     }
   };
 
+  const handleScheduleTask = (task) => {
+    // Add to plans for the current viewDate
+    // Use a default time or just placement
+    const newPlan = {
+      ...task,
+      id: generateId(), // New ID for the plan instance to avoid conflict if added multiple times
+      date: viewDate,
+      startTime: `${viewDate}T09:00:00`,
+      endTime: `${viewDate}T10:00:00`,
+      type: 'plan'
+    };
+    setPlans([...plans, newPlan]);
+    // Notify or feedback?
+    // Maybe switch to dashboard
+    setCurrentPage('dashboard');
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 bg-dot-pattern text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       <PrintStyles />
@@ -1466,7 +1490,20 @@ function App() {
         />
 
         {currentPage === 'printer' ? (
-          <PhotoPrinter onBack={() => setCurrentPage('dashboard')} />
+          <PhotoPrinter
+            onBack={() => setCurrentPage('dashboard')}
+            tasks={tasks}
+            plans={plans}
+            categories={categories}
+            weekStart={getStartOfWeek(viewDate)}
+          />
+        ) : currentPage === 'board' ? (
+          <TaskBoard
+            tasks={kanbanTasks}
+            setTasks={setKanbanTasks}
+            categories={categories}
+            onScheduleTask={handleScheduleTask}
+          />
         ) : (
           <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto decoration-clone">
             <div className={`flex flex-col xl:flex-row gap-6 items-start`}>
