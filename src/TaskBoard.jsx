@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, MoreHorizontal, Calendar, Trash2, ArrowRight, CheckCircle, Circle, Clock, ChevronDown, ChevronRight, CheckSquare, Square } from 'lucide-react';
 
-const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus, deleteTask, onScheduleTask, handleAddTask, newTaskName, setNewTaskName, handleAddSubTask, toggleSubTaskStatus, deleteSubTask }) => {
+const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus, deleteTask, onScheduleTask, handleAddTask, newTaskName, setNewTaskName, handleAddSubTask, toggleSubTaskStatus, deleteSubTask, newTaskCategory, setNewTaskCategory }) => {
 
     // Helper to determine display status
     const getTaskDisplayStatus = (task) => {
@@ -54,7 +54,7 @@ const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus
                                 {/* Subtasks List */}
                                 <div className="space-y-1 mb-3">
                                     {task.subtasks && task.subtasks.map(sub => (
-                                        <div key={sub.id} className="flex items-start gap-2 text-sm group/sub">
+                                        <div key={sub.id} className="flex items-center gap-2 text-sm group/sub">
                                             <button
                                                 onClick={() => toggleSubTaskStatus(task.id, sub.id)}
                                                 className={`mt-0.5 ${sub.status === 'done' ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-400'}`}
@@ -64,9 +64,19 @@ const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus
                                             <span className={`flex-1 transition-all ${sub.status === 'done' ? 'text-slate-400 line-through' : 'text-slate-600 dark:text-slate-300'}`}>
                                                 {sub.name}
                                             </span>
+
+                                            {/* Schedule Subtask Button */}
+                                            <button
+                                                onClick={() => onScheduleTask(sub.name, task.categoryId)}
+                                                className="opacity-0 group-hover/sub:opacity-100 p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-all"
+                                                title="调度子任务"
+                                            >
+                                                <Calendar size={14} />
+                                            </button>
+
                                             <button
                                                 onClick={() => deleteSubTask(task.id, sub.id)}
-                                                className="opacity-0 group-hover/sub:opacity-100 text-slate-300 hover:text-rose-500 transition-opacity"
+                                                className="opacity-0 group-hover/sub:opacity-100 p-1 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all"
                                             >
                                                 <Trash2 size={12} />
                                             </button>
@@ -111,41 +121,49 @@ const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50 dark:border-slate-700/50">
+                        <div className="mt-2 pt-2 border-t border-slate-50 dark:border-slate-700/50 flex justify-end">
                             <div className="text-[10px] text-slate-400 font-mono">
                                 {task.subtasks ? `${task.subtasks.filter(s => s.status === 'done').length}/${task.subtasks.length}` : '0/0'}
                             </div>
-
-                            <button
-                                onClick={() => onScheduleTask(task)}
-                                className="flex items-center gap-1 text-xs font-bold text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-2.5 py-1.5 rounded-lg transition-colors"
-                            >
-                                <Calendar size={14} />
-                                调度
-                            </button>
                         </div>
                     </div>
                 ))}
 
                 {status === 'todo' && (
-                    <form onSubmit={handleAddTask} className="mt-2">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={newTaskName}
-                                onChange={(e) => setNewTaskName(e.target.value)}
-                                placeholder="添加新大任务..."
-                                className="w-full pl-3 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!newTaskName.trim()}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:bg-slate-300 transition-all"
-                            >
-                                <Plus size={16} />
-                            </button>
+                    <div className="mt-2 space-y-2">
+                        {/* Category Selector for New Task */}
+                        <div className="flex gap-1.5 flex-wrap px-1">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setNewTaskCategory(cat.id)}
+                                    className={`w-4 h-4 rounded-full transition-all border ${newTaskCategory === cat.id ? 'scale-110 ring-2 ring-offset-1 dark:ring-offset-slate-800 ring-indigo-500/50' : 'opacity-60 hover:opacity-100 hover:scale-105'}`}
+                                    style={{ backgroundColor: cat.color, borderColor: newTaskCategory === cat.id ? 'transparent' : 'transparent' }}
+                                    title={cat.name}
+                                />
+                            ))}
                         </div>
-                    </form>
+
+                        <form onSubmit={handleAddTask}>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={newTaskName}
+                                    onChange={(e) => setNewTaskName(e.target.value)}
+                                    placeholder="添加新大任务..."
+                                    className="w-full pl-3 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                                    style={{ borderColor: categories.find(c => c.id === newTaskCategory)?.color || '' }}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newTaskName.trim()}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:bg-slate-300 transition-all"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 )}
             </div>
         </div>
@@ -157,6 +175,7 @@ const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
     // Task Structure: { id, name, status, categoryId, subtasks: [{id, name, status}] }
 
     const [newTaskName, setNewTaskName] = useState('');
+    const [newTaskCategory, setNewTaskCategory] = useState(categories[0]?.id);
 
     const handleAddTask = (e) => {
         e.preventDefault();
@@ -165,7 +184,7 @@ const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
             id: Date.now().toString(),
             name: newTaskName,
             status: 'todo', // Initial status, will be overridden by subtasks logic usually
-            categoryId: categories[0].id,
+            categoryId: newTaskCategory || categories[0].id,
             estimatedDuration: 3600,
             createdAt: new Date().toISOString(),
             subtasks: []
@@ -271,6 +290,8 @@ const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
                     handleAddSubTask={handleAddSubTask}
                     toggleSubTaskStatus={toggleSubTaskStatus}
                     deleteSubTask={deleteSubTask}
+                    newTaskCategory={newTaskCategory}
+                    setNewTaskCategory={setNewTaskCategory}
                 />
                 <Column
                     title="进行中 (Doing)"

@@ -1415,7 +1415,12 @@ function App() {
       if (manualForm.id) {
         setPlans(plans.map(p => p.id === manualForm.id ? newTask : p));
       } else {
-        setPlans([newTask, ...plans]);
+        setPlans([...plans, { ...newTask, id: generateId() }]);
+      }
+
+      // If adding/editing plan from Board, switch to Dashboard to view it
+      if (currentPage === 'board') {
+        setCurrentPage('dashboard');
       }
     } else {
       if (manualForm.id) {
@@ -1442,21 +1447,18 @@ function App() {
     }
   };
 
-  const handleScheduleTask = (task) => {
-    // Add to plans for the current viewDate
-    // Use a default time or just placement
-    const newPlan = {
-      ...task,
-      id: generateId(), // New ID for the plan instance to avoid conflict if added multiple times
+  const handleScheduleTask = (taskName, categoryId) => {
+    // Open Manual Modal pre-filled
+    setManualForm({
+      id: null,
+      name: taskName,
+      categoryId: categoryId || categories[0].id,
       date: viewDate,
-      startTime: `${viewDate}T09:00:00`,
-      endTime: `${viewDate}T10:00:00`,
+      startTime: '09:00',
+      endTime: '10:00',
       type: 'plan'
-    };
-    setPlans([...plans, newPlan]);
-    // Notify or feedback?
-    // Maybe switch to dashboard
-    setCurrentPage('dashboard');
+    });
+    setIsManualModalOpen(true);
   };
 
   return (
