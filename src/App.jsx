@@ -816,6 +816,9 @@ const TimerInterface = ({
           </div>
         </div>
         <div className="flex gap-2 relative z-50">
+          <button onClick={handleStartNextTask} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-indigo-500 hover:text-indigo-600 transition-colors" title="完成并开始下一项">
+            <FastForward size={18} />
+          </button>
           {!isPiPActive && window.documentPictureInPicture && (
             <button
               onClick={togglePiP}
@@ -881,21 +884,7 @@ const TimerInterface = ({
                 />
               </div>
 
-              {/* Tools Row */}
-              <div className="flex gap-1.5 mt-3">
-                <button onClick={handleStartNextTask} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="完成并开始下一项计划">
-                  <FastForward size={14} /> 下一项
-                </button>
-                <button onClick={() => openManualModal('actual')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="补登实绩">
-                  <Edit2 size={14} /> 补登
-                </button>
-                <button onClick={() => openManualModal('plan')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="计划预定">
-                  <Calendar size={14} /> 计划
-                </button>
-                <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="打印">
-                  <Printer size={14} /> 打印
-                </button>
-              </div>
+
 
               <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full mt-4 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${btnPrimary} disabled:opacity-50`}>
                 <Play size={20} fill="currentColor" /> 开始专注
@@ -1834,6 +1823,19 @@ function App() {
                   >
                     <ChevronRight size={32} />
                   </button>
+
+                  {/* Floating Action Buttons */}
+                  <div className="fixed bottom-8 right-8 xl:absolute xl:bottom-0 xl:right-0 z-50 flex flex-col gap-3 print:hidden">
+                    <button onClick={() => openManualModal('plan')} className="w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-all hover:scale-110" title="计划预定">
+                      <Calendar size={20} />
+                    </button>
+                    <button onClick={() => openManualModal('actual')} className="w-12 h-12 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="补登实绩">
+                      <Edit2 size={20} />
+                    </button>
+                    <button onClick={() => window.print()} className="w-12 h-12 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="打印">
+                      <Printer size={20} />
+                    </button>
+                  </div>
                 </div>
               )}
 
