@@ -1788,14 +1788,14 @@ function App() {
                   {/* Prev Week Button */}
                   <button
                     onClick={() => {
-                      const d = new Date(viewDate);
+                      const d = parseLocalDate(viewDate);
                       d.setDate(d.getDate() - 7);
                       setViewDate(toLocalDateString(d));
                     }}
-                    className="mt-20 p-2 bg-white dark:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
+                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
                     title="上周"
                   >
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={32} />
                   </button>
 
                   {/* Top: Weekly Report Strips */}
@@ -1816,14 +1816,14 @@ function App() {
                   {/* Next Week Button */}
                   <button
                     onClick={() => {
-                      const d = new Date(viewDate);
+                      const d = parseLocalDate(viewDate);
                       d.setDate(d.getDate() + 7);
                       setViewDate(toLocalDateString(d));
                     }}
-                    className="mt-20 p-2 bg-white dark:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
+                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
                     title="下周"
                   >
-                    <ChevronRight size={24} />
+                    <ChevronRight size={32} />
                   </button>
                 </div>
               )}
