@@ -1928,7 +1928,7 @@ function App() {
             </div>
 
             {/* Global Footer for Dashboard */}
-            <div className="no-print w-full text-center text-sm text-gray-400 mt-12 pb-8">
+            <div className="no-print w-full text-center text-sm text-gray-400 mt-32 pb-8">
               打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
               <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 23:00</div>
             </div>
