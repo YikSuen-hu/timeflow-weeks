@@ -992,58 +992,130 @@ const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, cat
 const ManualEntryModal = ({ isManualModalOpen, setIsManualModalOpen, manualForm, setManualForm, saveManualEntry, deleteManualEntry, categories }) => {
   if (!isManualModalOpen) return null;
   const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
+
+  const addSlot = () => {
+    setManualForm(prev => ({
+      ...prev,
+      slots: [...(prev.slots || []), { date: manualForm.slots?.[manualForm.slots.length - 1]?.date || toLocalDateString(new Date()), startTime: '09:00', endTime: '10:00' }]
+    }));
+  };
+
+  const removeSlot = (index) => {
+    if (manualForm.slots.length <= 1) return;
+    setManualForm(prev => ({
+      ...prev,
+      slots: prev.slots.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateSlot = (index, field, value) => {
+    setManualForm(prev => ({
+      ...prev,
+      slots: prev.slots.map((slot, i) => i === index ? { ...slot, [field]: value } : slot)
+    }));
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4 no-print">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-slate-100 dark:border-slate-700">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-slate-100 dark:border-slate-700 max-h-[90vh] flex flex-col">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 flex-shrink-0">
           <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <Edit2 size={18} /> {manualForm.id ? '编辑任务 / 计划' : '补登 / 计划'}
+            <Edit2 size={18} /> {manualForm.id ? '编辑任务 / 计划' : (manualForm.isSubtask ? '定投计划调度' : '补登 / 计划')}
           </h3>
           <button onClick={() => setIsManualModalOpen(false)} className="text-slate-400 hover:text-slate-600">
             <X size={20} />
           </button>
         </div>
-        <div className="p-6 space-y-4">
-          <div className="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl mb-4">
-            <button onClick={() => setManualForm({ ...manualForm, type: 'actual' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${manualForm.type === 'actual' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500'}`}>实绩记录 (Actual)</button>
-            <button onClick={() => setManualForm({ ...manualForm, type: 'plan' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${manualForm.type === 'plan' ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500'}`}>计划预定 (Plan)</button>
-          </div>
-          <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">日期</label><input type="date" value={manualForm.date} onChange={e => setManualForm({ ...manualForm, date: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">开始时间</label><input type="time" value={manualForm.startTime} onChange={e => setManualForm({ ...manualForm, startTime: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
-            <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">结束时间</label><input type="time" value={manualForm.endTime} onChange={e => setManualForm({ ...manualForm, endTime: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
-          </div>
+
+        <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+          {/* Main Task/Subtask Name Input - Always visible */}
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">分类</label>
-            <div className="flex gap-2 flex-wrap">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => !manualForm.categoryLocked && setManualForm({ ...manualForm, categoryId: cat.id })}
-                  disabled={manualForm.categoryLocked}
-                  style={{
-                    borderColor: manualForm.categoryId === cat.id ? cat.color : 'transparent',
-                    backgroundColor: manualForm.categoryId === cat.id ? `${cat.color}20` : 'transparent',
-                    color: manualForm.categoryId === cat.id ? cat.color : '#64748b',
-                    opacity: manualForm.categoryLocked && manualForm.categoryId !== cat.id ? 0.3 : 1,
-                    cursor: manualForm.categoryLocked ? 'not-allowed' : 'pointer'
-                  }}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 ${manualForm.categoryId !== cat.id ? 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700' : ''}`}
-                >
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
-                  {cat.name}
-                </button>
-              ))}
-            </div>
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">任务名称</label>
+            <input type="text" value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} placeholder="做了什么？" className={`w-full p-3 ${inputStyle}`} />
           </div>
-          <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">任务名称</label><input type="text" value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} placeholder="做了什么？" className={`w-full p-3 ${inputStyle}`} /></div>
-          <div className="flex gap-4">
-            {manualForm.id && (
+
+          {!manualForm.isSubtask ? (
+            <>
+              {/* Standard Mode UI */}
+              <div className="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl mb-4">
+                <button onClick={() => setManualForm({ ...manualForm, type: 'actual' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${manualForm.type === 'actual' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500'}`}>实绩记录 (Actual)</button>
+                <button onClick={() => setManualForm({ ...manualForm, type: 'plan' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${manualForm.type === 'plan' ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500'}`}>计划预定 (Plan)</button>
+              </div>
+
+              <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">日期</label><input type="date" value={manualForm.date} onChange={e => setManualForm({ ...manualForm, date: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">开始时间</label><input type="time" value={manualForm.startTime} onChange={e => setManualForm({ ...manualForm, startTime: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
+                <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">结束时间</label><input type="time" value={manualForm.endTime} onChange={e => setManualForm({ ...manualForm, endTime: e.target.value })} className={`w-full p-2.5 ${inputStyle}`} /></div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">分类</label>
+                <div className="flex gap-2 flex-wrap">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => !manualForm.categoryLocked && setManualForm({ ...manualForm, categoryId: cat.id })}
+                      disabled={manualForm.categoryLocked}
+                      style={{
+                        borderColor: manualForm.categoryId === cat.id ? cat.color : 'transparent',
+                        backgroundColor: manualForm.categoryId === cat.id ? `${cat.color}20` : 'transparent',
+                        color: manualForm.categoryId === cat.id ? cat.color : '#64748b',
+                        opacity: manualForm.categoryLocked && manualForm.categoryId !== cat.id ? 0.3 : 1,
+                        cursor: manualForm.categoryLocked ? 'not-allowed' : 'pointer'
+                      }}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 ${manualForm.categoryId !== cat.id ? 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700' : ''}`}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Subtask Multi-Schedule Mode UI */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs font-bold text-slate-400 uppercase">排期时间段 (可多选)</label>
+                  <button onClick={addSlot} className="text-xs text-indigo-500 hover:text-indigo-600 font-bold flex items-center gap-1">
+                    <Plus size={12} /> 添加时间段
+                  </button>
+                </div>
+
+                {manualForm.slots && manualForm.slots.map((slot, idx) => (
+                  <div key={idx} className="bg-slate-50 dark:bg-slate-700/30 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 relative group">
+                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => removeSlot(idx)} className="p-1 text-slate-300 hover:text-rose-500 rounded"><X size={14} /></button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 mb-2">
+                      <div><label className="text-[10px] items-center gap-1 text-slate-400 flex mb-0.5"><Calendar size={10} /> 日期</label><input type="date" value={slot.date} onChange={e => updateSlot(idx, 'date', e.target.value)} className={`w-full p-1.5 text-sm ${inputStyle}`} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><label className="text-[10px] items-center gap-1 text-slate-400 flex mb-0.5"><Clock size={10} /> 开始</label><input type="time" value={slot.startTime} onChange={e => updateSlot(idx, 'startTime', e.target.value)} className={`w-full p-1.5 text-sm ${inputStyle}`} /></div>
+                      <div><label className="text-[10px] items-center gap-1 text-slate-400 flex mb-0.5"><Clock size={10} /> 结束</label><input type="time" value={slot.endTime} onChange={e => updateSlot(idx, 'endTime', e.target.value)} className={`w-full p-1.5 text-sm ${inputStyle}`} /></div>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="text-xs text-slate-400 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg flex gap-2">
+                  <div className="flex-shrink-0 mt-0.5"><Zap size={14} className="text-indigo-400" /></div>
+                  <div>此任务将自动创建 {manualForm.slots?.length || 0} 条独立的计划记录。进度将在看板中合并统计。</div>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="flex gap-4 pt-2">
+            {manualForm.id && !manualForm.isSubtask && (
               <button onClick={deleteManualEntry} className="px-4 py-3 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl font-bold transition-colors">
                 <Trash2 size={18} />
               </button>
             )}
-            <button onClick={saveManualEntry} className={`flex-1 py-3 text-white rounded-xl font-bold flex justify-center gap-2 shadow-lg transition-transform active:scale-[0.98] ${manualForm.type === 'plan' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'}`}><Save size={18} /> {manualForm.id ? '更新' : (manualForm.type === 'plan' ? '保存计划' : '保存实绩')}</button>
+            <button onClick={saveManualEntry} className={`flex-1 py-3 text-white rounded-xl font-bold flex justify-center gap-2 shadow-lg transition-transform active:scale-[0.98] ${manualForm.type === 'plan' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30'}`}>
+              <Save size={18} />
+              {manualForm.id ? '更新' : (manualForm.isSubtask ? `保存 ${manualForm.slots?.length} 个计划` : (manualForm.type === 'plan' ? '保存计划' : '保存实绩'))}
+            </button>
           </div>
         </div>
       </div>
@@ -1497,46 +1569,63 @@ function App() {
   const saveManualEntry = () => {
     if (!manualForm.name) return alert('请输入任务名称');
 
-    // Explicitly construct dates in local time to avoid any timezone shifts
-    const [y, m, d] = manualForm.date.split('-').map(Number);
-    const [h, min] = manualForm.startTime.split(':').map(Number);
-    const [eh, emin] = manualForm.endTime.split(':').map(Number);
+    const createEntry = (date, start, end) => {
+      // Explicitly construct dates in local time to avoid any timezone shifts
+      const [y, m, d] = date.split('-').map(Number);
+      const [h, min] = start.split(':').map(Number);
+      const [eh, emin] = end.split(':').map(Number);
 
-    const startDateTime = new Date(y, m - 1, d, h, min, 0);
-    let endDateTime = new Date(y, m - 1, d, eh, emin, 0);
+      const startDateTime = new Date(y, m - 1, d, h, min, 0);
+      let endDateTime = new Date(y, m - 1, d, eh, emin, 0);
 
-    // Handle overnight tasks (end time next day)
-    if (endDateTime <= startDateTime) {
-      endDateTime = new Date(y, m - 1, d + 1, eh, emin, 0);
-    }
+      // Handle overnight tasks (end time next day)
+      if (endDateTime <= startDateTime) {
+        endDateTime = new Date(y, m - 1, d + 1, eh, emin, 0);
+      }
 
-    const duration = Math.floor((endDateTime - startDateTime) / 1000);
-    const newTask = {
-      id: manualForm.id || generateId(),
-      name: manualForm.name,
-      startTime: startDateTime.toISOString(),
-      endTime: endDateTime.toISOString(),
-      duration: duration,
-      date: manualForm.date,
-      categoryId: manualForm.categoryId
+      const duration = Math.floor((endDateTime - startDateTime) / 1000);
+      const newTask = {
+        id: generateId(), // Always new ID for bulk creation or individual
+        name: manualForm.name,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        duration: duration,
+        date: date,
+        categoryId: manualForm.categoryId
+      };
+      return newTask;
     };
 
-    if (manualForm.type === 'plan') {
-      if (manualForm.id) {
-        setPlans(plans.map(p => p.id === manualForm.id ? newTask : p));
-      } else {
-        setPlans([...plans, { ...newTask, id: generateId() }]);
-      }
-
-      // If adding/editing plan from Board, switch to Dashboard to view it
+    if (manualForm.isSubtask && manualForm.slots && manualForm.slots.length > 0) {
+      // Bulk create plans
+      const newPlans = manualForm.slots.map(slot => createEntry(slot.date, slot.startTime, slot.endTime));
+      setPlans([...plans, ...newPlans]);
       if (currentPage === 'board') {
-        setCurrentPage('dashboard');
+        // Toast or simple alert? simpler is better
+        // setCurrentPage('dashboard'); // Stay on board for subtasks usually
       }
     } else {
-      if (manualForm.id) {
-        setTasks(tasks.map(t => t.id === manualForm.id ? newTask : t));
+      // Single Entry Logic (Legacy/Standard)
+      // Reuse logic but need to handle ID for edits
+      const baseTask = createEntry(manualForm.date, manualForm.startTime, manualForm.endTime);
+      // Restore ID if editing
+      if (manualForm.id) baseTask.id = manualForm.id;
+
+      if (manualForm.type === 'plan') {
+        if (manualForm.id) {
+          setPlans(plans.map(p => p.id === manualForm.id ? baseTask : p));
+        } else {
+          setPlans([...plans, { ...baseTask, id: generateId() }]);
+        }
+        if (currentPage === 'board') {
+          setCurrentPage('dashboard');
+        }
       } else {
-        setTasks([newTask, ...tasks]);
+        if (manualForm.id) {
+          setTasks(tasks.map(t => t.id === manualForm.id ? baseTask : t));
+        } else {
+          setTasks([baseTask, ...tasks]);
+        }
       }
     }
 
@@ -1563,11 +1652,9 @@ function App() {
       id: null,
       name: taskName,
       categoryId: categoryId || categories[0].id,
-      date: viewDate,
-      startTime: '09:00',
-      endTime: '10:00',
       type: 'plan',
-      categoryLocked: true // Lock category for sub-tasks as requested
+      isSubtask: true, // Flag for specific subtask UI
+      slots: [{ date: viewDate, startTime: '09:00', endTime: '10:00' }] // Initial slot
     });
     setIsManualModalOpen(true);
   };
@@ -1616,6 +1703,8 @@ function App() {
             setTasks={setKanbanTasks}
             categories={categories}
             onScheduleTask={handleScheduleTask}
+            allTasks={tasks}
+            allPlans={plans}
           />
         ) : (
           <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto decoration-clone">

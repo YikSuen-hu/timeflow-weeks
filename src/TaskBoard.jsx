@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, MoreHorizontal, Calendar, Trash2, ArrowRight, CheckCircle, Circle, Clock, ChevronDown, ChevronRight, CheckSquare, Square } from 'lucide-react';
 
-const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus, deleteTask, onScheduleTask, handleAddTask, newTaskName, setNewTaskName, handleAddSubTask, toggleSubTaskStatus, deleteSubTask, newTaskCategory, setNewTaskCategory }) => {
+const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus, deleteTask, onScheduleTask, handleAddTask, newTaskName, setNewTaskName, handleAddSubTask, toggleSubTaskStatus, deleteSubTask, newTaskCategory, setNewTaskCategory, allTasks, allPlans }) => {
 
     // Helper to determine display status
     const getTaskDisplayStatus = (task) => {
@@ -26,6 +26,15 @@ const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus
         return cat.color;
     };
 
+    const mysub = (subName) => {
+        if (!subName) return { scheduled: 0, executed: 0 };
+        const scheduled = allPlans ? allPlans.filter(p => p.name === subName).reduce((acc, curr) => acc + (curr.duration || 0), 0) : 0;
+        const executed = allTasks ? allTasks.filter(t => t.name === subName).reduce((acc, curr) => acc + (curr.duration || 0), 0) : 0;
+        return { scheduled, executed };
+    };
+
+    const formatHours = (seconds) => (seconds / 3600).toFixed(1);
+
     return (
         <div className="flex-1 min-w-[320px] flex flex-col h-full bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-slate-100 dark:border-slate-700/50 overflow-hidden backdrop-blur-sm">
             <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 bg-white/50 dark:bg-slate-800/50">
@@ -46,42 +55,73 @@ const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus
                                 className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
                                 style={{ backgroundColor: getCategoryColor(task.categoryId) }}
                             ></span>
-                            <div className="flex-1 mx-3">
+                            <div className="flex-1 mx-3 min-w-0">
                                 <div className="font-bold text-slate-700 dark:text-slate-200 break-words leading-tight mb-2">
                                     {task.name}
                                 </div>
 
                                 {/* Subtasks List */}
-                                <div className="space-y-1 mb-3">
-                                    {task.subtasks && task.subtasks.map(sub => (
-                                        <div key={sub.id} className="flex items-center gap-2 text-sm group/sub">
-                                            <button
-                                                onClick={() => toggleSubTaskStatus(task.id, sub.id)}
-                                                className={`mt-0.5 ${sub.status === 'done' ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-400'}`}
-                                            >
-                                                {sub.status === 'done' ? <CheckSquare size={14} /> : <Square size={14} />}
-                                            </button>
-                                            <span className={`flex-1 transition-all ${sub.status === 'done' ? 'text-slate-400 line-through' : 'text-slate-600 dark:text-slate-300'}`}>
-                                                {sub.name}
-                                            </span>
+                                <div className="space-y-3 mb-3">
+                                    {task.subtasks && task.subtasks.map(sub => {
+                                        const stats = mysub(sub.name);
+                                        const hasData = stats.scheduled > 0 || stats.executed > 0;
+                                        // Max for progress bar (use max of scheduled or executed, defaulting to at least 1 hr to avoid div by zero Visuals)
+                                        const max = Math.max(stats.scheduled, stats.executed, 3600);
 
-                                            {/* Schedule Subtask Button */}
-                                            <button
-                                                onClick={() => onScheduleTask(sub.name, task.categoryId)}
-                                                className="opacity-0 group-hover/sub:opacity-100 p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-all"
-                                                title="调度子任务"
-                                            >
-                                                <Calendar size={14} />
-                                            </button>
+                                        return (
+                                            <div key={sub.id} className="text-sm group/sub">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => toggleSubTaskStatus(task.id, sub.id)}
+                                                        className={`mt-0.5 flex-shrink-0 ${sub.status === 'done' ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-400'}`}
+                                                    >
+                                                        {sub.status === 'done' ? <CheckSquare size={14} /> : <Square size={14} />}
+                                                    </button>
+                                                    <span className={`flex-1 transition-all truncate ${sub.status === 'done' ? 'text-slate-400 line-through' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                        {sub.name}
+                                                    </span>
 
-                                            <button
-                                                onClick={() => deleteSubTask(task.id, sub.id)}
-                                                className="opacity-0 group-hover/sub:opacity-100 p-1 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all"
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </div>
-                                    ))}
+                                                    {/* Schedule Subtask Button */}
+                                                    <button
+                                                        onClick={() => onScheduleTask(sub.name, task.categoryId)}
+                                                        className="opacity-0 group-hover/sub:opacity-100 p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-all"
+                                                        title="调度子任务"
+                                                    >
+                                                        <Calendar size={14} />
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => deleteSubTask(task.id, sub.id)}
+                                                        className="opacity-0 group-hover/sub:opacity-100 p-1 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+
+                                                {/* Progress Bar for Subtask */}
+                                                {hasData && (
+                                                    <div className="ml-6 mt-1.5">
+                                                        <div className="flex justify-between text-[10px] text-slate-400 font-mono mb-0.5">
+                                                            <span>已安排 {formatHours(stats.scheduled)}h</span>
+                                                            <span>已执行 {formatHours(stats.executed)}h</span>
+                                                        </div>
+                                                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden flex relative">
+                                                            {/* Scheduled Bar (Gray/Back) */}
+                                                            <div
+                                                                className="absolute top-0 left-0 h-full bg-slate-300 dark:bg-slate-600 rounded-full opacity-50"
+                                                                style={{ width: `${Math.min((stats.scheduled / max) * 100, 100)}%` }}
+                                                            ></div>
+                                                            {/* Executed Bar (Green/Front) */}
+                                                            <div
+                                                                className="absolute top-0 left-0 h-full bg-emerald-500 rounded-full opacity-80"
+                                                                style={{ width: `${Math.min((stats.executed / max) * 100, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
                                 </div>
 
                                 {/* Add Subtask Input */}
@@ -170,7 +210,8 @@ const Column = ({ title, status, icon: Icon, tasks, categories, updateTaskStatus
     );
 };
 
-const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
+
+const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask, allTasks, allPlans }) => {
     // Columns: 'todo', 'doing', 'done'
     // Task Structure: { id, name, status, categoryId, subtasks: [{id, name, status}] }
 
@@ -292,6 +333,8 @@ const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
                     deleteSubTask={deleteSubTask}
                     newTaskCategory={newTaskCategory}
                     setNewTaskCategory={setNewTaskCategory}
+                    allTasks={allTasks}
+                    allPlans={allPlans}
                 />
                 <Column
                     title="进行中 (Doing)"
@@ -305,6 +348,8 @@ const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
                     handleAddSubTask={handleAddSubTask}
                     toggleSubTaskStatus={toggleSubTaskStatus}
                     deleteSubTask={deleteSubTask}
+                    allTasks={allTasks}
+                    allPlans={allPlans}
                 />
                 <Column
                     title="已完成 (Done)"
@@ -318,6 +363,8 @@ const TaskBoard = ({ tasks, setTasks, categories, onScheduleTask }) => {
                     handleAddSubTask={handleAddSubTask}
                     toggleSubTaskStatus={toggleSubTaskStatus}
                     deleteSubTask={deleteSubTask}
+                    allTasks={allTasks}
+                    allPlans={allPlans}
                 />
             </div>
         </div>
