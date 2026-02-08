@@ -816,9 +816,7 @@ const TimerInterface = ({
           </div>
         </div>
         <div className="flex gap-2 relative z-50">
-          <button onClick={handleStartNextTask} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-indigo-500 hover:text-indigo-600 transition-colors" title="完成并开始下一项">
-            <FastForward size={18} />
-          </button>
+
           {!isPiPActive && window.documentPictureInPicture && (
             <button
               onClick={togglePiP}
@@ -847,6 +845,11 @@ const TimerInterface = ({
             <span className={`text-lg font-medium text-slate-400 mb-2 w-24 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
+            {!isMiniMode && !isPiPActive && (
+              <button onClick={handleStartNextTask} className="mb-2 p-3 bg-indigo-50 dark:bg-slate-700/50 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-slate-700 transition-colors" title="完成并开始下一项">
+                <FastForward size={24} />
+              </button>
+            )}
           </div>
           {currentTask && (
             <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-xl">
@@ -1234,6 +1237,9 @@ function App() {
     const savedCategories = localStorage.getItem('timeflow_categories');
     if (savedCategories) setCategories(JSON.parse(savedCategories));
 
+    const savedTodos = localStorage.getItem('timeflow_todos');
+    if (savedTodos) setTodos(JSON.parse(savedTodos));
+
     const savedTasks = localStorage.getItem('timeflow_tasks');
     if (savedTasks) setTasks(JSON.parse(savedTasks));
 
@@ -1264,6 +1270,7 @@ function App() {
   useEffect(() => { localStorage.setItem('timeflow_plans', JSON.stringify(plans)); }, [plans]);
   useEffect(() => { localStorage.setItem('timeflow_kanban_tasks', JSON.stringify(kanbanTasks)); }, [kanbanTasks]);
   useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { localStorage.setItem('timeflow_todos', JSON.stringify(todos)); }, [todos]);
 
   useEffect(() => {
     if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask));
@@ -1797,7 +1804,7 @@ function App() {
                   </button>
 
                   {/* Top: Weekly Report Strips */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 relative">
                     <WeeklyReportInterface
                       viewDate={viewDate}
                       setViewDate={setViewDate}
@@ -1809,6 +1816,19 @@ function App() {
                       showPlanActual={showPlanActual}
                       currentTime={currentTime}
                     />
+
+                    {/* Floating Action Buttons - Inside Relative Container */}
+                    <div className="absolute -right-12 bottom-0 flex flex-col gap-3 print:hidden">
+                      <button onClick={() => openManualModal('plan')} className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-all hover:scale-110" title="计划预定">
+                        <Calendar size={18} />
+                      </button>
+                      <button onClick={() => openManualModal('actual')} className="w-10 h-10 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="补登实绩">
+                        <Edit2 size={18} />
+                      </button>
+                      <button onClick={() => window.print()} className="w-10 h-10 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="打印">
+                        <Printer size={18} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Next Week Button */}
@@ -1824,18 +1844,7 @@ function App() {
                     <ChevronRight size={32} />
                   </button>
 
-                  {/* Floating Action Buttons */}
-                  <div className="fixed bottom-8 right-8 xl:absolute xl:bottom-0 xl:right-0 z-50 flex flex-col gap-3 print:hidden">
-                    <button onClick={() => openManualModal('plan')} className="w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-all hover:scale-110" title="计划预定">
-                      <Calendar size={20} />
-                    </button>
-                    <button onClick={() => openManualModal('actual')} className="w-12 h-12 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="补登实绩">
-                      <Edit2 size={20} />
-                    </button>
-                    <button onClick={() => window.print()} className="w-12 h-12 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="打印">
-                      <Printer size={20} />
-                    </button>
-                  </div>
+
                 </div>
               )}
 
