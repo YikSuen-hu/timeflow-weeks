@@ -1743,14 +1743,7 @@ function App() {
                     handleStartNextTask={handleStartNextTask}
                   />
                   {!isMiniMode && (
-                    <DateNavigator
-                      viewDate={viewDate}
-                      setViewDate={setViewDate}
-                      showStandard={showStandard}
-                      setShowStandard={setShowStandard}
-                      showPlanActual={showPlanActual}
-                      setShowPlanActual={setShowPlanActual}
-                    />
+                    <div className="hidden"></div>
                   )}
                 </div>
               )}
@@ -1791,19 +1784,47 @@ function App() {
 
 
               {!isMiniMode && (
-                <div className="flex-1 w-full min-w-0 space-y-8 animate-fade-in-up">
+                <div className="flex-1 w-full min-w-0 flex items-start gap-4 animate-fade-in-up">
+                  {/* Prev Week Button */}
+                  <button
+                    onClick={() => {
+                      const d = new Date(viewDate);
+                      d.setDate(d.getDate() - 7);
+                      setViewDate(toLocalDateString(d));
+                    }}
+                    className="mt-20 p-2 bg-white dark:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
+                    title="上周"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+
                   {/* Top: Weekly Report Strips */}
-                  <WeeklyReportInterface
-                    viewDate={viewDate}
-                    setViewDate={setViewDate}
-                    tasks={tasks}
-                    plans={plans}
-                    categories={categories}
-                    openManualModal={openManualModal}
-                    showStandard={showStandard}
-                    showPlanActual={showPlanActual}
-                    currentTime={currentTime}
-                  />
+                  <div className="flex-1 min-w-0">
+                    <WeeklyReportInterface
+                      viewDate={viewDate}
+                      setViewDate={setViewDate}
+                      tasks={tasks}
+                      plans={plans}
+                      categories={categories}
+                      openManualModal={openManualModal}
+                      showStandard={showStandard}
+                      showPlanActual={showPlanActual}
+                      currentTime={currentTime}
+                    />
+                  </div>
+
+                  {/* Next Week Button */}
+                  <button
+                    onClick={() => {
+                      const d = new Date(viewDate);
+                      d.setDate(d.getDate() + 7);
+                      setViewDate(toLocalDateString(d));
+                    }}
+                    className="mt-20 p-2 bg-white dark:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
+                    title="下周"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
                 </div>
               )}
 
