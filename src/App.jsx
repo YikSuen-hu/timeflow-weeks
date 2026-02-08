@@ -699,12 +699,12 @@ const DateNavigator = ({ viewDate, setViewDate, showStandard, setShowStandard, s
   const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
 
   return (
-    <div className={`mt-6 no-print w-full flex flex-col gap-4 items-center justify-between p-6 rounded-3xl ${glassCard}`}>
-      <div className="flex items-center gap-4 w-full justify-between">
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1 flex-1 justify-between">
-          <button onClick={() => moveWeek(-1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronLeft size={16} /></button>
-          <span className="px-3 text-sm font-mono font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">{weekStartStr} ~ {weekEndStr}</span>
-          <button onClick={() => moveWeek(1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all"><ChevronRight size={16} /></button>
+    <div className={`mt-6 no-print w-full flex flex-col gap-4 items-center justify-between p-6 rounded-3xl ${glassCard} relative z-30`}>
+      <div className="flex items-center gap-4 w-full justify-between relative z-30">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1 flex-1 justify-between relative">
+          <button onClick={() => moveWeek(-1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all relative z-40"><ChevronLeft size={16} /></button>
+          <span className="px-3 text-sm font-mono font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap z-0 overflow-hidden text-ellipsis">{weekStartStr} ~ {weekEndStr}</span>
+          <button onClick={() => moveWeek(1)} className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg shadow-sm transition-all relative z-40"><ChevronRight size={16} /></button>
         </div>
       </div>
       <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-700 pt-4 w-full justify-center">
@@ -813,7 +813,7 @@ const TimerInterface = ({
             </div>
           </div>
         </div>
-        <div className="flex gap-2" onPointerDown={e => e.stopPropagation()}>
+        <div className="flex gap-2 relative z-50">
           {!isPiPActive && window.documentPictureInPicture && (
             <button
               onClick={togglePiP}
@@ -880,18 +880,18 @@ const TimerInterface = ({
               </div>
 
               {/* Tools Row */}
-              <div className="flex gap-2 mt-3">
-                <button onClick={handleStartNextTask} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="完成并开始下一项计划">
-                  <FastForward size={16} /> 下一项
+              <div className="flex gap-1.5 mt-3">
+                <button onClick={handleStartNextTask} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="完成并开始下一项计划">
+                  <FastForward size={14} /> 下一项
                 </button>
-                <button onClick={() => openManualModal('actual')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="补登实绩">
-                  <Edit2 size={16} /> 补登
+                <button onClick={() => openManualModal('actual')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="补登实绩">
+                  <Edit2 size={14} /> 补登
                 </button>
-                <button onClick={() => openManualModal('plan')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="计划预定">
-                  <Calendar size={16} /> 计划
+                <button onClick={() => openManualModal('plan')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="计划预定">
+                  <Calendar size={14} /> 计划
                 </button>
-                <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="打印">
-                  <Printer size={16} /> 打印
+                <button onClick={() => window.print()} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap`} title="打印">
+                  <Printer size={14} /> 打印
                 </button>
               </div>
 
