@@ -8,6 +8,8 @@ import {
   BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon, Layout, FastForward
 } from 'lucide-react';
 import TaskBoard from './TaskBoard';
+import TodoList from './TodoList';
+import MonthView from './MonthView';
 
 // --- 1. Styles & Constants ---
 
@@ -670,7 +672,7 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
   const weekEndStr = toLocalDateString(weekDates[6]);
 
   return (
-    <div className="w-full">
+    <div className="w-full mb-60">
       <div className="flex gap-8 items-start justify-center overflow-visible">
         <div className="print-area flex justify-center flex-1 origin-top transition-transform duration-300 scale-125">
           <PrintStyles />
@@ -1129,6 +1131,7 @@ const SideNav = ({ activePage, onNavigate }) => {
   const navItems = [
     { id: 'dashboard', icon: Calendar, label: '日程手账' },
     { id: 'board', icon: Layout, label: '任务看板' },
+    { id: 'month', icon: Calendar, label: '月历视图' },
     { id: 'printer', icon: Printer, label: '素材打印' },
   ];
 
@@ -1164,6 +1167,7 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [plans, setPlans] = useState([]);
   const [kanbanTasks, setKanbanTasks] = useState([]);
+  const [todos, setTodos] = useState([]);
 
   const [currentTask, setCurrentTask] = useState(null);
   const [taskName, setTaskName] = useState('');
@@ -1706,6 +1710,8 @@ function App() {
             allTasks={tasks}
             allPlans={plans}
           />
+        ) : currentPage === 'month' ? (
+          <MonthView todos={todos} />
         ) : (
           <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto decoration-clone">
             <div className={`flex flex-col xl:flex-row gap-6 items-start`}>
@@ -1742,6 +1748,9 @@ function App() {
                     isPiPActive={false}
                     handleStartNextTask={handleStartNextTask}
                   />
+                  <div className="mt-6">
+                    <TodoList todos={todos} setTodos={setTodos} />
+                  </div>
                   {!isMiniMode && (
                     <div className="hidden"></div>
                   )}
@@ -1928,7 +1937,7 @@ function App() {
             </div>
 
             {/* Global Footer for Dashboard */}
-            <div className="no-print w-full text-center text-sm text-gray-400 mt-32 pb-8">
+            <div className="no-print w-full text-center text-sm text-gray-400 mt-12 pb-8">
               打印提示：建议使用 "A4", "无边距", "缩放100%"。左侧为精简版，右侧为 PDCA 详细版。
               <div className="text-[10px] opacity-50 mt-1">v6.1 Build: 2026-02-03 23:00</div>
             </div>
