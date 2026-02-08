@@ -5,7 +5,7 @@ import {
   Play, Square, Maximize2, Minimize2, Printer, Trash2,
   Clock, ChevronRight, ChevronLeft, CheckCircle, Plus,
   Edit2, X, Save, Settings, RotateCcw, Zap, Eye, EyeOff, Moon, Sun,
-  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon, Layout
+  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon, Layout, FastForward
 } from 'lucide-react';
 import TaskBoard from './TaskBoard';
 
@@ -426,8 +426,23 @@ const StatsInterface = ({ tasks, categories, weekStartStr, weekEndStr }) => {
   );
 };
 
-const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal }) => {
+const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal, currentTime }) => {
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
+
+  // Calculate current time position
+  let currentTimeTopMM = -1;
+  if (currentTime) {
+    const h = currentTime.getHours();
+    const m = currentTime.getMinutes();
+    const adjustedH = h < 7 ? h + 24 : h;
+    const startHourMetric = (adjustedH - 7) + (m / 60);
+
+    if (startHourMetric < HOURS_DAY_PART) {
+      currentTimeTopMM = startHourMetric * HOUR_HEIGHT_DAY;
+    } else {
+      currentTimeTopMM = HEIGHT_DAY_MM + (startHourMetric - HOURS_DAY_PART) * HOUR_HEIGHT_NIGHT;
+    }
+  }
 
   return (
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '33mm', minHeight: '180mm' }}>
@@ -496,6 +511,15 @@ const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal 
                     <span style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>{String(item.task.name).slice(0, 10)}</span>
                   </div>
                 ))}
+                {toLocalDateString(dateObj) === toLocalDateString(currentTime) && currentTimeTopMM >= 0 && (
+                  <div
+                    className="absolute w-full border-t border-red-500 border-dashed z-50 pointer-events-none"
+                    style={{ top: `${currentTimeTopMM}mm` }}
+                    title="Current Time"
+                  >
+                    <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full" />
+                  </div>
+                )}
               </div>
             );
           })}
@@ -506,8 +530,23 @@ const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal 
   );
 };
 
-const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories, openManualModal }) => {
+const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories, openManualModal, currentTime }) => {
   const horizontalGridLines = Math.floor(TOTAL_HEIGHT_MM / 4);
+
+  // Calculate current time position
+  let currentTimeTopMM = -1;
+  if (currentTime) {
+    const h = currentTime.getHours();
+    const m = currentTime.getMinutes();
+    const adjustedH = h < 7 ? h + 24 : h;
+    const startHourMetric = (adjustedH - 7) + (m / 60);
+
+    if (startHourMetric < HOURS_DAY_PART) {
+      currentTimeTopMM = startHourMetric * HOUR_HEIGHT_DAY;
+    } else {
+      currentTimeTopMM = HEIGHT_DAY_MM + (startHourMetric - HOURS_DAY_PART) * HOUR_HEIGHT_NIGHT;
+    }
+  }
 
   return (
     <div className="print-chart-container bg-white text-black relative flex flex-col items-center" style={{ width: '61mm', minHeight: '180mm' }}>
@@ -566,8 +605,19 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
             const planLayout = getTaskLayout(dayPlans);
             const dayActuals = getTasksForDate(processedTasks, dateObj);
             const actualLayout = getTaskLayout(dayActuals);
+            const isToday = toLocalDateString(dateObj) === toLocalDateString(currentTime);
+
             return (
               <div key={i} className="absolute h-full" style={{ left: `${i * 8}mm`, width: '8mm' }}>
+                {isToday && currentTimeTopMM >= 0 && (
+                  <div
+                    className="absolute w-full border-t border-red-500 border-dashed z-50 pointer-events-none"
+                    style={{ top: `${currentTimeTopMM}mm` }}
+                    title="Current Time"
+                  >
+                    <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full" />
+                  </div>
+                )}
                 <div className="absolute h-full left-0 top-0" style={{ width: '4mm' }}>
                   {planLayout.map((item) => (
                     <div
@@ -604,7 +654,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
   );
 };
 
-const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories, openManualModal, showStandard, showPlanActual }) => {
+const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories, openManualModal, showStandard, showPlanActual, currentTime }) => {
 
   const processedTasks = useMemo(() => splitTasksAcrossDays(tasks), [tasks]);
   const processedPlans = useMemo(() => splitTasksAcrossDays(plans), [plans]);
@@ -624,8 +674,8 @@ const WeeklyReportInterface = ({ viewDate, setViewDate, tasks, plans, categories
       <div className="flex gap-8 items-start justify-center overflow-visible">
         <div className="print-area flex justify-center flex-1 origin-top transition-transform duration-300 scale-125">
           <PrintStyles />
-          {showStandard && <StandardStrip weekDates={weekDates} processedTasks={processedTasks} categories={categories} openManualModal={openManualModal} />}
-          {showPlanActual && <div className="ml-8"><PlanActualStrip weekDates={weekDates} processedTasks={processedTasks} processedPlans={processedPlans} categories={categories} openManualModal={openManualModal} /></div>}
+          {showStandard && <StandardStrip weekDates={weekDates} processedTasks={processedTasks} categories={categories} openManualModal={openManualModal} currentTime={currentTime} />}
+          {showPlanActual && <div className="ml-8"><PlanActualStrip weekDates={weekDates} processedTasks={processedTasks} processedPlans={processedPlans} categories={categories} openManualModal={openManualModal} currentTime={currentTime} /></div>}
         </div>
       </div>
 
@@ -674,7 +724,7 @@ const TimerInterface = ({
   currentTask, taskName, setTaskName, startTimer, stopTimer, adjustStartTime,
   categories, selectedCategoryId, setSelectedCategoryId, openManualModal, setIsCategoryModalOpen,
   subElapsed, currentSubTask, subTaskName, setSubTaskName, startSubTimer, stopSubTimer,
-  togglePiP, isPiPActive
+  togglePiP, isPiPActive, handleStartNextTask
 }) => {
   const currentCat = currentTask ? getCategory(categories, currentTask.categoryId) : null;
   const glassCard = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20";
@@ -831,6 +881,9 @@ const TimerInterface = ({
 
               {/* Tools Row */}
               <div className="flex gap-2 mt-3">
+                <button onClick={handleStartNextTask} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="完成并开始下一项计划">
+                  <FastForward size={16} /> 下一项
+                </button>
                 <button onClick={() => openManualModal('actual')} className={`flex-1 ${btnSecondary} py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2`} title="补登实绩">
                   <Edit2 size={16} /> 补登
                 </button>
@@ -1321,6 +1374,53 @@ function App() {
     setSubElapsed(0);
   };
 
+  const handleStartNextTask = () => {
+    // 1. Stop current task if running
+    if (currentTask) {
+      const endTime = new Date().toISOString();
+      const completedTask = {
+        ...currentTask,
+        endTime,
+        duration: elapsed,
+        date: toLocalDateString(new Date())
+      };
+      setTasks(prev => [completedTask, ...prev]);
+    }
+
+    // 2. Find next plan
+    const now = new Date();
+    // Filter plans for today and start time > now
+    const nextPlans = plans.filter(p => {
+      return p.date === viewDate && new Date(p.startTime) > now;
+    }).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+    if (nextPlans.length > 0) {
+      const nextPlan = nextPlans[0];
+      const newTask = {
+        id: generateId(),
+        name: nextPlan.name,
+        startTime: new Date().toISOString(),
+        duration: 0,
+        categoryId: nextPlan.categoryId || nextPlan.category?.id || categories[0].id,
+        type: 'main'
+      };
+
+      // Update state
+      setTaskName(nextPlan.name);
+      setSelectedCategoryId(newTask.categoryId);
+      setCurrentTask(newTask);
+      setElapsed(0);
+    } else {
+      alert("今天没有更多待办计划了！");
+      if (currentTask) {
+        // If we stopped a task but didn't start a new one, we need to clear the current task state
+        setCurrentTask(null);
+        setTaskName('');
+        setElapsed(0);
+      }
+    }
+  };
+
   const deleteTask = (id, isPlan = false) => {
     if (confirm('确定删除这条记录吗？')) {
       if (isPlan) {
@@ -1551,6 +1651,7 @@ function App() {
                     stopSubTimer={stopSubTimer}
                     togglePiP={togglePiP}
                     isPiPActive={false}
+                    handleStartNextTask={handleStartNextTask}
                   />
                   {!isMiniMode && (
                     <DateNavigator
@@ -1593,6 +1694,7 @@ function App() {
                     stopSubTimer={stopSubTimer}
                     togglePiP={togglePiP}
                     isPiPActive={true}
+                    handleStartNextTask={handleStartNextTask}
                   />
                 </div>,
                 pipWindow.document.body
@@ -1611,6 +1713,7 @@ function App() {
                     openManualModal={openManualModal}
                     showStandard={showStandard}
                     showPlanActual={showPlanActual}
+                    currentTime={currentTime}
                   />
                 </div>
               )}
