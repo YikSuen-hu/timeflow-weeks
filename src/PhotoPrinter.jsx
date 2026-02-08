@@ -4,14 +4,22 @@ import { Upload, X, Printer, Image as ImageIcon } from 'lucide-react';
 const PhotoPrinter = ({ onBack }) => {
     const [images, setImages] = useState([]);
 
-    const handleFileUpload = (e) => {
+    const handleFileUpload = (e, size) => {
         const files = Array.from(e.target.files);
-        const newImages = files.map(file => URL.createObjectURL(file));
+        if (files.length === 0) return;
+
+        const newImages = files.map(file => ({
+            id: Math.random().toString(36).substr(2, 9),
+            url: URL.createObjectURL(file),
+            size: size
+        }));
         setImages(prev => [...prev, ...newImages]);
+        // Reset input to allow re-uploading same file
+        e.target.value = '';
     };
 
-    const removeImage = (index) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
+    const removeImage = (id) => {
+        setImages(prev => prev.filter(img => img.id !== id));
     };
 
     return (
@@ -53,14 +61,19 @@ const PhotoPrinter = ({ onBack }) => {
                     </button>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <ImageIcon className="text-pink-500" />
-                        24mm Photo Sticker Printer
+                        Photo Sticker Printer
                     </h1>
                 </div>
                 <div className="flex gap-3">
-                    <label className="cursor-pointer px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/30 flex items-center gap-2 font-bold transition-all active:scale-95">
+                    <label className="cursor-pointer px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/30 flex items-center gap-2 font-bold transition-all active:scale-95">
                         <Upload size={18} />
-                        Upload Photos
-                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+                        Upload 24mm
+                        <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 24)} />
+                    </label>
+                    <label className="cursor-pointer px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg shadow-pink-500/30 flex items-center gap-2 font-bold transition-all active:scale-95">
+                        <Upload size={18} />
+                        Upload 20mm
+                        <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 20)} />
                     </label>
                     <button
                         onClick={() => window.print()}
@@ -82,30 +95,35 @@ const PhotoPrinter = ({ onBack }) => {
                     </div>
                 ) : null}
 
-                {/* The Grid */}
-                <div className="photo-print-area grid gap-0 content-start" style={{
-                    gridTemplateColumns: 'repeat(auto-fill, 24mm)',
+                {/* The Grid - Now Flexbox for mixed sizes */}
+                <div className="photo-print-area flex flex-wrap content-start" style={{
                     width: '100%',
-                    justifyContent: 'start'
                 }}>
-                    {images.map((img, index) => (
+                    {images.map((img) => (
                         <div
-                            key={index}
+                            key={img.id}
                             className="relative group border-[0.25px] border-slate-200 overflow-hidden bg-gray-100" // 0.25px thin border
-                            style={{ width: '24mm', height: '24mm' }}
+                            style={{
+                                width: `${img.size}mm`,
+                                height: `${img.size}mm`,
+                                margin: 0
+                            }}
                         >
                             <img
-                                src={img}
-                                alt={`Update ${index}`}
+                                src={img.url}
+                                alt={`Print ${img.size}mm`}
                                 className="w-full h-full object-cover"
                             />
                             {/* Delete Overlay (No Print) */}
                             <button
-                                onClick={() => removeImage(index)}
+                                onClick={() => removeImage(img.id)}
                                 className="no-print absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
                             >
                                 <X size={16} />
                             </button>
+                            <div className="no-print absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[8px] text-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                {img.size}mm
+                            </div>
                         </div>
                     ))}
                 </div>
