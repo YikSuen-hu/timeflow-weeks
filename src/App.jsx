@@ -515,7 +515,7 @@ const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal,
                 ))}
                 {toLocalDateString(dateObj) === toLocalDateString(currentTime) && currentTimeTopMM >= 0 && (
                   <div
-                    className="absolute w-full border-t border-red-500 border-dashed z-50 pointer-events-none"
+                    className="absolute w-full border-t border-red-500 border-dashed z-50 pointer-events-none no-print"
                     style={{ top: `${currentTimeTopMM}mm` }}
                     title="Current Time"
                   >
@@ -613,7 +613,7 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
               <div key={i} className="absolute h-full" style={{ left: `${i * 8}mm`, width: '8mm' }}>
                 {isToday && currentTimeTopMM >= 0 && (
                   <div
-                    className="absolute w-full border-t border-red-500 border-dashed z-50 pointer-events-none"
+                    className="absolute w-full border-t border-red-500 border-dashed z-50 pointer-events-none no-print"
                     style={{ top: `${currentTimeTopMM}mm` }}
                     title="Current Time"
                   >
@@ -1748,7 +1748,7 @@ function App() {
                     isPiPActive={false}
                     handleStartNextTask={handleStartNextTask}
                   />
-                  <div className="mt-6">
+                  <div className="mt-6 no-print">
                     <TodoList todos={todos} setTodos={setTodos} />
                   </div>
                   {!isMiniMode && (
