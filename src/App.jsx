@@ -329,10 +329,10 @@ const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) 
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
-              ${isDropdownOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+            className={`w-7 h-7 rounded-full text-xs font-bold transition-all border flex items-center justify-center
+              ${isDropdownOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700'}`}
           >
-            更多 <ChevronDown size={12} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isDropdownOpen && (
