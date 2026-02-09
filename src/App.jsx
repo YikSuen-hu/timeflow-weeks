@@ -1290,6 +1290,12 @@ function App() {
         pipWindow.document.documentElement.classList.remove('dark');
         pipWindow.document.body.classList.remove('dark');
       }
+
+      // Update theme-color if it exists
+      const meta = pipWindow.document.querySelector('meta[name="theme-color"]');
+      if (meta) {
+        meta.content = isDarkMode ? '#0f172a' : '#f8fafc';
+      }
     }
   }, [isDarkMode, pipWindow]);
 
@@ -1435,6 +1441,12 @@ function App() {
       styles.forEach(style => {
         pip.document.head.appendChild(style.cloneNode(true));
       });
+
+      // Add theme-color meta tag for PWA/Mobile look (might affect title bar in some browsers)
+      const metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = 'theme-color';
+      metaThemeColor.content = isDarkMode ? '#0f172a' : '#f8fafc'; // slate-900 : slate-50
+      pip.document.head.appendChild(metaThemeColor);
 
       if (isDarkMode) {
         pip.document.documentElement.classList.add('dark');
