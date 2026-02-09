@@ -975,7 +975,7 @@ const TimerInterface = ({
         </div>
         <div className="flex items-center gap-3">
           <div className={`font-mono font-bold ${currentSubTask ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600'} text-2xl min-w-[70px] text-center`}>
-            {formatDuration(subElapsed).replace('h ', ':').replace('m', '')}
+            {`${Math.floor(subElapsed / 60)}:${String(subElapsed % 60).padStart(2, '0')}`}
           </div>
           <div className="flex-1">
             {!currentSubTask ? (
