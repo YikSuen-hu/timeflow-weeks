@@ -125,6 +125,13 @@ const formatDuration = (seconds) => {
   return `${h}h ${m}m`;
 };
 
+const formatTimer = (seconds) => {
+  if (isNaN(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 const formatTime = (dateObj) => {
   return dateObj.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
 };
@@ -905,7 +912,7 @@ const TimerInterface = ({
       <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-3' : 'p-4 pb-6'}`}>
         <div className="text-center mb-2 relative group">
           <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-2 leading-none ${isPiPActive ? 'text-5xl' : (isMiniMode ? 'text-6xl' : 'text-7xl tracking-tighter')}`}>
-            <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
+            <span className="leading-none">{formatTimer(elapsed)}</span>
             {!isMiniMode && !isPiPActive && (
               <button onClick={handleStartNextTask} className="mb-2 p-2 bg-indigo-50 dark:bg-slate-700/50 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-slate-700 transition-colors" title="完成并开始下一项">
                 <FastForward size={20} />
@@ -972,7 +979,7 @@ const TimerInterface = ({
         </div>
         <div className="flex items-center gap-3">
           <div className={`font-mono font-bold ${currentSubTask ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600'} text-2xl min-w-[70px] text-center`}>
-            {`${Math.floor(subElapsed / 60)}:${String(subElapsed % 60).padStart(2, '0')}`}
+            {formatTimer(subElapsed)}
           </div>
           <div className="flex-1">
             {!currentSubTask ? (
@@ -2011,7 +2018,7 @@ function App() {
                                 <div className="flex items-start gap-4">
                                   <span className="mt-1.5 w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: cat.color }}></span>
                                   <div>
-                                    <div className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 text-lg">
+                                    <div className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                       {task.name}
                                       {task.type === 'sub' && <span className="text-[10px] bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">Parallel</span>}
                                     </div>
@@ -2025,7 +2032,7 @@ function App() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-6">
-                                  <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-lg">{formatDuration(task.duration)}</span>
+                                  <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{formatDuration(task.duration)}</span>
                                   <button onClick={() => deleteTask(task.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
                                 </div>
                               </div>
