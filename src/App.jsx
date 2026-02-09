@@ -1879,7 +1879,14 @@ function App() {
                   )}
                   {pipMode === 'todo' && (
                     <div className="h-full overflow-hidden flex flex-col p-4 bg-white dark:bg-slate-800">
-                      <TodoList todos={todos} setTodos={setTodos} togglePiP={() => togglePiP('todo')} isPiPActive={true} />
+                      <TodoList
+                        todos={todos}
+                        setTodos={setTodos}
+                        togglePiP={() => togglePiP('todo')}
+                        isPiPActive={true}
+                        timerStr={formatTimer(elapsed)}
+                        currentTaskName={currentTask ? currentTask.name : (taskName || 'Ready')}
+                      />
                     </div>
                   )}
                 </div>,

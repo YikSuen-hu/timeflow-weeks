@@ -44,6 +44,14 @@ const TodoList = ({ todos, setTodos, togglePiP, isPiPActive }) => {
                     <CheckCircle size={isPiPActive ? 16 : 20} className="text-indigo-500" />
                     小便签 (To-Do)
                 </div>
+
+                {isPiPActive && timerStr && (
+                    <div className="flex flex-col items-end leading-none">
+                        <span className="font-mono font-bold text-xl text-indigo-600 dark:text-indigo-400">{timerStr}</span>
+                        {currentTaskName && <span className="text-[10px] text-slate-400 max-w-[100px] truncate">{currentTaskName}</span>}
+                    </div>
+                )}
+
                 {!isPiPActive && window.documentPictureInPicture && togglePiP && (
                     <button
                         onClick={togglePiP}
