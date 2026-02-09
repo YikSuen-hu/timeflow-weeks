@@ -292,8 +292,8 @@ const getTasksForDate = (taskList, dateObj) => {
 
 const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const visibleCategories = categories.slice(0, 4);
-  const hiddenCategories = categories.slice(4);
+  const visibleCategories = categories.slice(0, 3);
+  const hiddenCategories = categories.slice(3);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -906,9 +906,6 @@ const TimerInterface = ({
         <div className="text-center mb-2 relative group">
           <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-2 leading-none ${isPiPActive ? 'text-5xl' : (isMiniMode ? 'text-6xl' : 'text-7xl tracking-tighter')}`}>
             <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
-            <span className={`text-sm font-medium text-slate-400 mb-1 w-10 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
-              {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
-            </span>
             {!isMiniMode && !isPiPActive && (
               <button onClick={handleStartNextTask} className="mb-2 p-2 bg-indigo-50 dark:bg-slate-700/50 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-slate-700 transition-colors" title="完成并开始下一项">
                 <FastForward size={20} />
