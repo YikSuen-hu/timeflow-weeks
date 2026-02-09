@@ -883,7 +883,7 @@ const TimerInterface = ({
 
           {!isPiPActive && window.documentPictureInPicture && (
             <button
-              onClick={togglePiP}
+              onClick={() => togglePiP('timer')}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors"
               title="独立悬浮窗 (Always on Top)"
             >
@@ -1237,149 +1237,26 @@ function App() {
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [pipMode, setPipMode] = useState('timer'); // 'timer' | 'todo'
 
   // PiP State
   const [pipWindow, setPipWindow] = useState(null);
 
-  const [manualForm, setManualForm] = useState({
-    name: '',
-    date: toLocalDateString(new Date()),
-    startTime: '09:00',
-    endTime: '10:00',
-    categoryId: DEFAULT_CATEGORIES[0].id,
-    type: 'actual'
-  });
-
-  const [showStandard, setShowStandard] = useState(true);
-  const [showPlanActual, setShowPlanActual] = useState(true);
-
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('timeflow_dark_mode');
-      return saved ? JSON.parse(saved) : true; // Default to dark or light as preferred
-    }
-    return false;
-  });
-
-  const timerRef = useRef(null);
-  const subTimerRef = useRef(null);
-
-  useEffect(() => {
-    const clockInterval = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(clockInterval);
-  }, []);
-
-  // Sync Dark Mode with DOM
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('timeflow_dark_mode', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
-
-  // Sync PiP if active
-  useEffect(() => {
-    if (pipWindow) {
-      if (isDarkMode) {
-        pipWindow.document.documentElement.classList.add('dark');
-        pipWindow.document.body.classList.add('dark');
-      } else {
-        pipWindow.document.documentElement.classList.remove('dark');
-        pipWindow.document.body.classList.remove('dark');
-      }
-    }
-  }, [isDarkMode, pipWindow]);
-
-  // Load Data
-  useEffect(() => {
-    const savedCategories = localStorage.getItem('timeflow_categories');
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
-
-    const savedTodos = localStorage.getItem('timeflow_todos');
-    if (savedTodos) setTodos(JSON.parse(savedTodos));
-
-    const savedTasks = localStorage.getItem('timeflow_tasks');
-    if (savedTasks) setTasks(JSON.parse(savedTasks));
-
-    const savedPlans = localStorage.getItem('timeflow_plans');
-    if (savedPlans) setPlans(JSON.parse(savedPlans));
-
-    const savedKanban = localStorage.getItem('timeflow_kanban_tasks');
-    if (savedKanban) setKanbanTasks(JSON.parse(savedKanban));
-
-    const savedCurrent = localStorage.getItem('timeflow_current');
-    if (savedCurrent) {
-      const parsed = JSON.parse(savedCurrent);
-      setCurrentTask(parsed);
-      setTaskName(parsed.name);
-      if (parsed.categoryId) setSelectedCategoryId(parsed.categoryId);
-    }
-
-    const savedSub = localStorage.getItem('timeflow_sub_current');
-    if (savedSub) {
-      const parsed = JSON.parse(savedSub);
-      setCurrentSubTask(parsed);
-      setSubTaskName(parsed.name);
-    }
-  }, []);
-
-  // Save Data
-  useEffect(() => { localStorage.setItem('timeflow_tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('timeflow_plans', JSON.stringify(plans)); }, [plans]);
-  useEffect(() => { localStorage.setItem('timeflow_kanban_tasks', JSON.stringify(kanbanTasks)); }, [kanbanTasks]);
-  useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('timeflow_todos', JSON.stringify(todos)); }, [todos]);
-
-  useEffect(() => {
-    if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask));
-    else localStorage.removeItem('timeflow_current');
-  }, [currentTask]);
-
-  useEffect(() => {
-    if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask));
-    else localStorage.removeItem('timeflow_sub_current');
-  }, [currentSubTask]);
-
-  // Timers
-  useEffect(() => {
-    if (currentTask) {
-      const calculateElapsed = () => {
-        const now = Date.now();
-        const start = new Date(currentTask.startTime).getTime();
-        setElapsed(Math.max(0, Math.floor((now - start) / 1000)));
-      };
-      calculateElapsed();
-      timerRef.current = setInterval(calculateElapsed, 1000);
-    } else {
-      clearInterval(timerRef.current);
-      setElapsed(0);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [currentTask]);
-
-  useEffect(() => {
-    if (currentSubTask) {
-      const calculateSubElapsed = () => {
-        const now = Date.now();
-        const start = new Date(currentSubTask.startTime).getTime();
-        setSubElapsed(Math.max(0, Math.floor((now - start) / 1000)));
-      };
-      calculateSubElapsed();
-      subTimerRef.current = setInterval(calculateSubElapsed, 1000);
-    } else {
-      clearInterval(subTimerRef.current);
-      setSubElapsed(0);
-    }
-    return () => clearInterval(subTimerRef.current);
-  }, [currentSubTask]);
+  // ... (existing code for useManualForm) ...
 
   // PiP Toggle
-  const togglePiP = async () => {
+  const togglePiP = async (mode = 'timer') => {
+    // If PiP is open...
     if (pipWindow) {
-      pipWindow.close();
-      setPipWindow(null);
+      // If clicking the SAME mode button, close it.
+      if (pipMode === mode) {
+        pipWindow.close();
+        setPipWindow(null);
+      } else {
+        // If clicking a DIFFERENT mode button, just switch the mode.
+        // The Portal will re-render the new content into the existing window.
+        setPipMode(mode);
+      }
       return;
     }
 
@@ -1395,8 +1272,9 @@ function App() {
     }
 
     try {
+      setPipMode(mode); // Set the requested mode before opening
       const pip = await window.documentPictureInPicture.requestWindow({
-        width: 340,
+        width: mode === 'timer' ? 340 : 400, // Slightly wider for Todo?
         height: 600,
       });
 
@@ -1777,45 +1655,6 @@ function App() {
               {!pipWindow && (
                 <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'w-full xl:w-[350px] flex-shrink-0 xl:sticky xl:top-6'}`}>
                   <TimerInterface
-                    isMiniMode={isMiniMode}
-                    setIsMiniMode={setIsMiniMode}
-                    isDarkMode={isDarkMode}
-                    setIsDarkMode={setIsDarkMode}
-                    currentTime={currentTime}
-                    elapsed={elapsed}
-                    currentTask={currentTask}
-                    taskName={taskName}
-                    setTaskName={setTaskName}
-                    startTimer={startTimer}
-                    stopTimer={stopTimer}
-                    adjustStartTime={adjustStartTime}
-                    categories={categories}
-                    selectedCategoryId={selectedCategoryId}
-                    setSelectedCategoryId={setSelectedCategoryId}
-                    openManualModal={openManualModal}
-                    setIsCategoryModalOpen={setIsCategoryModalOpen}
-                    subElapsed={subElapsed}
-                    currentSubTask={currentSubTask}
-                    subTaskName={subTaskName}
-                    setSubTaskName={setSubTaskName}
-                    startSubTimer={startSubTimer}
-                    stopSubTimer={stopSubTimer}
-                    togglePiP={togglePiP}
-                    isPiPActive={false}
-                    handleStartNextTask={handleStartNextTask}
-                  />
-                  <div className="mt-6 no-print">
-                    <TodoList todos={todos} setTodos={setTodos} />
-                  </div>
-                  {!isMiniMode && (
-                    <div className="hidden"></div>
-                  )}
-                </div>
-              )}
-
-              {pipWindow && createPortal(
-                <div className="h-full w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden">
-                  <TimerInterface
                     isMiniMode={false} // Always full in PiP
                     setIsMiniMode={() => { }}
                     isDarkMode={isDarkMode}
@@ -1839,10 +1678,56 @@ function App() {
                     setSubTaskName={setSubTaskName}
                     startSubTimer={startSubTimer}
                     stopSubTimer={stopSubTimer}
-                    togglePiP={togglePiP}
-                    isPiPActive={true}
+                    togglePiP={() => togglePiP('timer')}
+                    isPiPActive={false}
                     handleStartNextTask={handleStartNextTask}
                   />
+                  <div className="mt-6 no-print">
+                    <TodoList todos={todos} setTodos={setTodos} togglePiP={() => togglePiP('todo')} isPiPActive={false} />
+                  </div>
+                  {!isMiniMode && (
+                    <div className="hidden"></div>
+                  )}
+                </div>
+              )}
+
+              {pipWindow && createPortal(
+                <div className="h-full w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden">
+                  {pipMode === 'timer' && (
+                    <TimerInterface
+                      isMiniMode={false}
+                      setIsMiniMode={() => { }}
+                      isDarkMode={isDarkMode}
+                      setIsDarkMode={setIsDarkMode}
+                      currentTime={currentTime}
+                      elapsed={elapsed}
+                      currentTask={currentTask}
+                      taskName={taskName}
+                      setTaskName={setTaskName}
+                      startTimer={startTimer}
+                      stopTimer={stopTimer}
+                      adjustStartTime={adjustStartTime}
+                      categories={categories}
+                      selectedCategoryId={selectedCategoryId}
+                      setSelectedCategoryId={setSelectedCategoryId}
+                      openManualModal={openManualModal}
+                      setIsCategoryModalOpen={setIsCategoryModalOpen}
+                      subElapsed={subElapsed}
+                      currentSubTask={currentSubTask}
+                      subTaskName={subTaskName}
+                      setSubTaskName={setSubTaskName}
+                      startSubTimer={startSubTimer}
+                      stopSubTimer={stopSubTimer}
+                      togglePiP={() => togglePiP('timer')}
+                      isPiPActive={true}
+                      handleStartNextTask={handleStartNextTask}
+                    />
+                  )}
+                  {pipMode === 'todo' && (
+                    <div className="h-full overflow-hidden flex flex-col p-4 bg-white dark:bg-slate-800">
+                      <TodoList todos={todos} setTodos={setTodos} togglePiP={() => togglePiP('todo')} isPiPActive={true} />
+                    </div>
+                  )}
                 </div>,
                 pipWindow.document.body
               )}

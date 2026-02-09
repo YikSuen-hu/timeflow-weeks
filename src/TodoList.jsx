@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, CheckCircle, Circle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, PictureInPicture2 } from 'lucide-react';
 
-const TodoList = ({ todos, setTodos }) => {
+const TodoList = ({ todos, setTodos, togglePiP, isPiPActive }) => {
     const [newTodo, setNewTodo] = useState('');
 
     const handleAddTodo = (e) => {
@@ -36,10 +35,21 @@ const TodoList = ({ todos, setTodos }) => {
     const activeTodos = todos.filter(t => !t.completed);
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 w-full">
-            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                <CheckCircle size={20} className="text-indigo-500" />
-                小便签 (To-Do)
+        <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 w-full ${isPiPActive ? 'h-full border-0 shadow-none p-0' : ''}`}>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <CheckCircle size={20} className="text-indigo-500" />
+                    小便签 (To-Do)
+                </div>
+                {!isPiPActive && window.documentPictureInPicture && togglePiP && (
+                    <button
+                        onClick={togglePiP}
+                        className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition-colors"
+                        title="独立悬浮窗"
+                    >
+                        <PictureInPicture2 size={16} />
+                    </button>
+                )}
             </h3>
 
             <form onSubmit={handleAddTodo} className="relative mb-4">
