@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Plus, Trash2, CheckCircle, Circle, PictureInPicture2 } from 'lucide-react';
 
 const TodoList = ({ todos, setTodos, togglePiP, isPiPActive }) => {
