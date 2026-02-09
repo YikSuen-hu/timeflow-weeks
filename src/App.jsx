@@ -1242,7 +1242,139 @@ function App() {
   // PiP State
   const [pipWindow, setPipWindow] = useState(null);
 
-  // ... (existing code for useManualForm) ...
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    date: toLocalDateString(new Date()),
+    startTime: '09:00',
+    endTime: '10:00',
+    categoryId: DEFAULT_CATEGORIES[0].id,
+    type: 'actual'
+  });
+
+  const [showStandard, setShowStandard] = useState(true);
+  const [showPlanActual, setShowPlanActual] = useState(true);
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('timeflow_dark_mode');
+      return saved ? JSON.parse(saved) : true; // Default to dark or light as preferred
+    }
+    return false;
+  });
+
+  const timerRef = useRef(null);
+  const subTimerRef = useRef(null);
+
+  useEffect(() => {
+    const clockInterval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(clockInterval);
+  }, []);
+
+  // Sync Dark Mode with DOM
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('timeflow_dark_mode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  // Sync PiP if active
+  useEffect(() => {
+    if (pipWindow) {
+      if (isDarkMode) {
+        pipWindow.document.documentElement.classList.add('dark');
+        pipWindow.document.body.classList.add('dark');
+      } else {
+        pipWindow.document.documentElement.classList.remove('dark');
+        pipWindow.document.body.classList.remove('dark');
+      }
+    }
+  }, [isDarkMode, pipWindow]);
+
+  // Load Data
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('timeflow_categories');
+    if (savedCategories) setCategories(JSON.parse(savedCategories));
+
+    const savedTodos = localStorage.getItem('timeflow_todos');
+    if (savedTodos) setTodos(JSON.parse(savedTodos));
+
+    const savedTasks = localStorage.getItem('timeflow_tasks');
+    if (savedTasks) setTasks(JSON.parse(savedTasks));
+
+    const savedPlans = localStorage.getItem('timeflow_plans');
+    if (savedPlans) setPlans(JSON.parse(savedPlans));
+
+    const savedKanban = localStorage.getItem('timeflow_kanban_tasks');
+    if (savedKanban) setKanbanTasks(JSON.parse(savedKanban));
+
+    const savedCurrent = localStorage.getItem('timeflow_current');
+    if (savedCurrent) {
+      const parsed = JSON.parse(savedCurrent);
+      setCurrentTask(parsed);
+      setTaskName(parsed.name);
+      if (parsed.categoryId) setSelectedCategoryId(parsed.categoryId);
+    }
+
+    const savedSub = localStorage.getItem('timeflow_sub_current');
+    if (savedSub) {
+      const parsed = JSON.parse(savedSub);
+      setCurrentSubTask(parsed);
+      setSubTaskName(parsed.name);
+    }
+  }, []);
+
+  // Save Data
+  useEffect(() => { localStorage.setItem('timeflow_tasks', JSON.stringify(tasks)); }, [tasks]);
+  useEffect(() => { localStorage.setItem('timeflow_plans', JSON.stringify(plans)); }, [plans]);
+  useEffect(() => { localStorage.setItem('timeflow_kanban_tasks', JSON.stringify(kanbanTasks)); }, [kanbanTasks]);
+  useEffect(() => { localStorage.setItem('timeflow_categories', JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { localStorage.setItem('timeflow_todos', JSON.stringify(todos)); }, [todos]);
+
+  useEffect(() => {
+    if (currentTask) localStorage.setItem('timeflow_current', JSON.stringify(currentTask));
+    else localStorage.removeItem('timeflow_current');
+  }, [currentTask]);
+
+  useEffect(() => {
+    if (currentSubTask) localStorage.setItem('timeflow_sub_current', JSON.stringify(currentSubTask));
+    else localStorage.removeItem('timeflow_sub_current');
+  }, [currentSubTask]);
+
+  // Timers
+  useEffect(() => {
+    if (currentTask) {
+      const calculateElapsed = () => {
+        const now = Date.now();
+        const start = new Date(currentTask.startTime).getTime();
+        setElapsed(Math.max(0, Math.floor((now - start) / 1000)));
+      };
+      calculateElapsed();
+      timerRef.current = setInterval(calculateElapsed, 1000);
+    } else {
+      clearInterval(timerRef.current);
+      setElapsed(0);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [currentTask]);
+
+  useEffect(() => {
+    if (currentSubTask) {
+      const calculateSubElapsed = () => {
+        const now = Date.now();
+        const start = new Date(currentSubTask.startTime).getTime();
+        setSubElapsed(Math.max(0, Math.floor((now - start) / 1000)));
+      };
+      calculateSubElapsed();
+      subTimerRef.current = setInterval(calculateSubElapsed, 1000);
+    } else {
+      clearInterval(subTimerRef.current);
+      setSubElapsed(0);
+    }
+    return () => clearInterval(subTimerRef.current);
+  }, [currentSubTask]);
 
   // PiP Toggle
   const togglePiP = async (mode = 'timer') => {
