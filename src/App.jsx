@@ -290,32 +290,83 @@ const getTasksForDate = (taskList, dateObj) => {
 
 // --- 3. UI Components ---
 
-const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) => (
-  <div className="flex gap-2 flex-wrap mb-4">
-    {categories.map(cat => (
+const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const visibleCategories = categories.slice(0, 4);
+  const hiddenCategories = categories.slice(4);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="flex gap-2 flex-wrap mb-2 relative">
+      {visibleCategories.map(cat => (
+        <button
+          key={cat.id}
+          onClick={() => onSelect(cat.id)}
+          style={{
+            borderColor: selectedId === cat.id ? cat.color : 'transparent',
+            backgroundColor: selectedId === cat.id ? `${cat.color}20` : 'transparent',
+            color: selectedId === cat.id ? cat.color : undefined
+          }}
+          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
+            ${selectedId !== cat.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700' : ''}`}
+        >
+          <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: cat.color }}></span>
+          {cat.name}
+        </button>
+      ))}
+
+      {hiddenCategories.length > 0 && (
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
+              ${isDropdownOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+          >
+            更多 <ChevronDown size={12} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isDropdownOpen && (
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 z-[100] animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex flex-col gap-1">
+                {hiddenCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      onSelect(cat.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 w-full text-left
+                      ${selectedId === cat.id ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                  >
+                    <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: cat.color }}></span>
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <button
-        key={cat.id}
-        onClick={() => onSelect(cat.id)}
-        style={{
-          borderColor: selectedId === cat.id ? cat.color : 'transparent',
-          backgroundColor: selectedId === cat.id ? `${cat.color}20` : 'transparent',
-          color: selectedId === cat.id ? cat.color : undefined
-        }}
-        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
-          ${selectedId !== cat.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700' : ''}`}
+        onClick={onOpenSettings}
+        className="px-2 py-1.5 rounded-full text-xs font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 transition-colors ml-auto"
       >
-        <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: cat.color }}></span>
-        {cat.name}
+        <Settings size={14} />
       </button>
-    ))}
-    <button
-      onClick={onOpenSettings}
-      className="px-2 py-1.5 rounded-full text-xs font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 transition-colors"
-    >
-      <Settings size={14} />
-    </button>
-  </div>
-);
+    </div>
+  );
+};
 
 const StatsInterface = ({ tasks, categories, weekStartStr, weekEndStr }) => {
   const stats = useMemo(() => {
@@ -802,7 +853,7 @@ const TimerInterface = ({
     >
 
       {/* Header */}
-      <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 ${isMiniMode || isPiPActive ? 'p-3 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing' : 'p-6'}`}>
+      <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 ${isMiniMode || isPiPActive ? 'p-3 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing' : 'p-4'}`}>
         <div className="flex items-center gap-3">
           {isMiniMode && !isPiPActive && <Move size={14} className="text-slate-400 mr-1" />}
           <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -838,16 +889,16 @@ const TimerInterface = ({
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-8 pb-10'}`}>
-        <div className="text-center mb-8 relative group">
-          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-8 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-8xl tracking-tighter'}`}>
+      <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-4 pb-6'}`}>
+        <div className="text-center mb-4 relative group">
+          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-4 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-7xl tracking-tighter'}`}>
             <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
-            <span className={`text-lg font-medium text-slate-400 mb-2 w-24 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
+            <span className={`text-base font-medium text-slate-400 mb-2 w-16 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
             {!isMiniMode && !isPiPActive && (
-              <button onClick={handleStartNextTask} className="mb-2 p-3 bg-indigo-50 dark:bg-slate-700/50 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-slate-700 transition-colors" title="完成并开始下一项">
-                <FastForward size={24} />
+              <button onClick={handleStartNextTask} className="mb-2 p-2 bg-indigo-50 dark:bg-slate-700/50 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-slate-700 transition-colors" title="完成并开始下一项">
+                <FastForward size={20} />
               </button>
             )}
           </div>
@@ -858,16 +909,16 @@ const TimerInterface = ({
             </div>
           )}
           {currentTask && (
-            <div className="flex items-center justify-center gap-2 mt-4 animate-fade-in">
+            <div className="flex items-center justify-center gap-2 mt-2 animate-fade-in">
               <div className="h-1.5 w-1.5 rounded-full animate-ping" style={{ backgroundColor: currentCat.color }}></div>
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
                 {currentTask.name}
               </span>
             </div>
           )}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-3">
           {!currentTask ? (
             <div className="animate-fade-in-up">
               <CategorySelector
@@ -876,26 +927,24 @@ const TimerInterface = ({
                 onSelect={setSelectedCategoryId}
                 onOpenSettings={() => setIsCategoryModalOpen(true)}
               />
-              <div className="mt-4">
+              <div className="mt-2">
                 <input
                   type="text"
                   value={taskName}
                   onChange={(e) => setTaskName(e.target.value)}
                   placeholder="What's your focus?"
-                  className={`w-full px-5 py-4 text-lg ${inputStyle}`}
+                  className={`w-full px-4 py-3 text-base ${inputStyle}`}
                   onKeyDown={(e) => e.key === 'Enter' && startTimer()}
                 />
               </div>
 
-
-
-              <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full mt-4 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${btnPrimary} disabled:opacity-50`}>
-                <Play size={20} fill="currentColor" /> 开始专注
+              <button onClick={startTimer} disabled={!taskName.trim()} className={`w-full mt-3 py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 ${btnPrimary} disabled:opacity-50`}>
+                <Play size={18} fill="currentColor" /> 开始专注
               </button>
             </div>
           ) : (
-            <button onClick={stopTimer} className="w-full py-5 rounded-xl font-bold text-lg flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white shadow-lg transition-all active:scale-[0.98]">
-              <Square size={20} fill="currentColor" /> 完成主任务
+            <button onClick={stopTimer} className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white shadow-lg transition-all active:scale-[0.98]">
+              <Square size={18} fill="currentColor" /> 完成主任务
             </button>
           )}
         </div>
