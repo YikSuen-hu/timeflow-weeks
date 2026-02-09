@@ -36,10 +36,12 @@ const TodoList = ({ todos, setTodos, togglePiP, isPiPActive }) => {
     const activeTodos = todos.filter(t => !t.completed);
 
     return (
-        <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 w-full ${isPiPActive ? 'h-full border-0 shadow-none p-0' : ''}`}>
-            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center justify-between">
+        <div className={`bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 w-full 
+            ${isPiPActive ? 'h-full border-0 shadow-none p-2' : 'p-6'}`}>
+            <h3 className={`font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between
+                ${isPiPActive ? 'text-sm mb-2' : 'text-lg mb-4'}`}>
                 <div className="flex items-center gap-2">
-                    <CheckCircle size={20} className="text-indigo-500" />
+                    <CheckCircle size={isPiPActive ? 16 : 20} className="text-indigo-500" />
                     小便签 (To-Do)
                 </div>
                 {!isPiPActive && window.documentPictureInPicture && togglePiP && (
@@ -59,37 +61,40 @@ const TodoList = ({ todos, setTodos, togglePiP, isPiPActive }) => {
                     value={newTodo}
                     onChange={(e) => setNewTodo(e.target.value)}
                     placeholder="添加待办事项..."
-                    className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`w-full bg-slate-50 dark:bg-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all
+                        ${isPiPActive ? 'pl-2 pr-8 py-1.5 text-xs' : 'pl-4 pr-10 py-3 text-sm'}`}
                 />
                 <button
                     type="submit"
                     disabled={!newTodo.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg disabled:opacity-50 transition-all"
+                    className={`absolute right-1 top-1/2 -translate-y-1/2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg disabled:opacity-50 transition-all
+                         ${isPiPActive ? 'p-0.5' : 'p-1.5'}`}
                 >
-                    <Plus size={18} />
+                    <Plus size={isPiPActive ? 14 : 18} />
                 </button>
             </form>
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+            <div className={`space-y-2 overflow-y-auto custom-scrollbar pr-1 ${isPiPActive ? 'max-h-[calc(100vh-80px)] space-y-1' : 'max-h-[300px]'}`}>
                 {activeTodos.length === 0 ? (
                     <div className="text-center text-slate-400 text-xs py-4">暂无待办</div>
                 ) : (
                     activeTodos.map(todo => (
-                        <div key={todo.id} className="group flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div key={todo.id} className={`group flex items-center justify-between bg-slate-50 dark:bg-slate-700/30 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all
+                            ${isPiPActive ? 'p-1.5' : 'p-3'}`}>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <button
                                     onClick={() => toggleTodo(todo.id)}
-                                    className="text-slate-400 hover:text-indigo-500 transition-colors"
+                                    className="text-slate-400 hover:text-indigo-500 transition-colors flex-shrink-0"
                                 >
-                                    <Circle size={18} />
+                                    <Circle size={isPiPActive ? 14 : 18} />
                                 </button>
-                                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{todo.text}</span>
+                                <span className={`text-slate-700 dark:text-slate-300 truncate ${isPiPActive ? 'text-xs' : 'text-sm'}`}>{todo.text}</span>
                             </div>
                             <button
                                 onClick={() => deleteTodo(todo.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition-all"
+                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-all"
                             >
-                                <Trash2 size={14} />
+                                <Trash2 size={isPiPActive ? 12 : 14} />
                             </button>
                         </div>
                     ))

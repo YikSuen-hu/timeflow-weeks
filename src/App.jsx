@@ -1784,44 +1784,47 @@ function App() {
 
 
               {/* Timer Section - Render in Main Window OR via Portal in PiP */}
-              {!pipWindow && (
-                <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'w-full xl:w-[350px] flex-shrink-0 xl:sticky xl:top-6'}`}>
-                  <TimerInterface
-                    isMiniMode={false} // Always full in PiP
-                    setIsMiniMode={() => { }}
-                    isDarkMode={isDarkMode}
-                    setIsDarkMode={setIsDarkMode}
-                    currentTime={currentTime}
-                    elapsed={elapsed}
-                    currentTask={currentTask}
-                    taskName={taskName}
-                    setTaskName={setTaskName}
-                    startTimer={startTimer}
-                    stopTimer={stopTimer}
-                    adjustStartTime={adjustStartTime}
-                    categories={categories}
-                    selectedCategoryId={selectedCategoryId}
-                    setSelectedCategoryId={setSelectedCategoryId}
-                    openManualModal={openManualModal}
-                    setIsCategoryModalOpen={setIsCategoryModalOpen}
-                    subElapsed={subElapsed}
-                    currentSubTask={currentSubTask}
-                    subTaskName={subTaskName}
-                    setSubTaskName={setSubTaskName}
-                    startSubTimer={startSubTimer}
-                    stopSubTimer={stopSubTimer}
-                    togglePiP={() => togglePiP('timer')}
-                    isPiPActive={false}
-                    handleStartNextTask={handleStartNextTask}
-                  />
-                  <div className="mt-6 no-print">
-                    <TodoList todos={todos} setTodos={setTodos} togglePiP={() => togglePiP('todo')} isPiPActive={false} />
-                  </div>
-                  {!isMiniMode && (
-                    <div className="hidden"></div>
-                  )}
+              {/* Timer Section - Always Render in Main Window */}
+              <div className={`${isMiniMode ? 'fixed bottom-6 right-6 z-50 w-auto' : 'w-full xl:w-[350px] flex-shrink-0 xl:sticky xl:top-6'}`}>
+                <TimerInterface
+                  isMiniMode={isMiniMode} // Always full in main window for now? Or respect isMiniMode?
+                  // Actually, if isMiniMode is true, we want the mini card.
+                  // But wait, the previous logic was: if !pipWindow, render this block.
+                  // Now we want to render it ALWAYS.
+                  // If isMiniMode is active, it floats in bottom right.
+                  setIsMiniMode={setIsMiniMode}
+                  isDarkMode={isDarkMode}
+                  setIsDarkMode={setIsDarkMode}
+                  currentTime={currentTime}
+                  elapsed={elapsed}
+                  currentTask={currentTask}
+                  taskName={taskName}
+                  setTaskName={setTaskName}
+                  startTimer={startTimer}
+                  stopTimer={stopTimer}
+                  adjustStartTime={adjustStartTime}
+                  categories={categories}
+                  selectedCategoryId={selectedCategoryId}
+                  setSelectedCategoryId={setSelectedCategoryId}
+                  openManualModal={openManualModal}
+                  setIsCategoryModalOpen={setIsCategoryModalOpen}
+                  subElapsed={subElapsed}
+                  currentSubTask={currentSubTask}
+                  subTaskName={subTaskName}
+                  setSubTaskName={setSubTaskName}
+                  startSubTimer={startSubTimer}
+                  stopSubTimer={stopSubTimer}
+                  togglePiP={() => togglePiP('timer')}
+                  isPiPActive={false}
+                  handleStartNextTask={handleStartNextTask}
+                />
+                <div className="mt-6 no-print">
+                  <TodoList todos={todos} setTodos={setTodos} togglePiP={() => togglePiP('todo')} isPiPActive={false} />
                 </div>
-              )}
+                {!isMiniMode && (
+                  <div className="hidden"></div>
+                )}
+              </div>
 
               {pipWindow && createPortal(
                 <div className="h-full w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden">
