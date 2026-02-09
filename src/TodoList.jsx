@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, CheckCircle, Circle, PictureInPicture2 } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, PictureInPicture2, Play, Square } from 'lucide-react';
 
 const TodoList = ({ todos, setTodos, togglePiP, isPiPActive, timerStr, currentTaskName }) => {
     const [newTodo, setNewTodo] = useState('');
@@ -46,9 +46,22 @@ const TodoList = ({ todos, setTodos, togglePiP, isPiPActive, timerStr, currentTa
                 </div>
 
                 {isPiPActive && timerStr && (
-                    <div className="flex flex-col items-end leading-none">
-                        <span className="font-mono font-bold text-xl text-indigo-600 dark:text-indigo-400">{timerStr}</span>
-                        {currentTaskName && <span className="text-[10px] text-slate-400 max-w-[100px] truncate">{currentTaskName}</span>}
+                    <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-end leading-none">
+                            <span className="font-mono font-bold text-xl text-indigo-600 dark:text-indigo-400">{timerStr}</span>
+                            {currentTaskName && <span className="text-[10px] text-slate-400 max-w-[100px] truncate">{currentTaskName}</span>}
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {!isRunning ? (
+                                <button onClick={onStart} className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors">
+                                    <Play size={14} fill="currentColor" />
+                                </button>
+                            ) : (
+                                <button onClick={onStop} className="p-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors">
+                                    <Square size={14} fill="currentColor" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 
