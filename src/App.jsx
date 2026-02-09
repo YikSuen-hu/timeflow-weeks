@@ -307,7 +307,7 @@ const CategorySelector = ({ categories, selectedId, onSelect, onOpenSettings }) 
   }, []);
 
   return (
-    <div className="flex gap-2 flex-wrap mb-2 relative">
+    <div className="flex gap-2 items-center mb-2 relative">
       {visibleCategories.map(cat => (
         <button
           key={cat.id}
@@ -951,28 +951,29 @@ const TimerInterface = ({
       </div>
 
       {/* Sub Task Panel */}
-      <div className="bg-slate-50/80 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/50 p-5 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4">
+      {/* Sub Task Panel */}
+      <div className="bg-slate-50/80 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/50 p-3 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
             <Zap size={14} className={currentSubTask ? "text-amber-500 fill-amber-500" : ""} />
             副任务
           </div>
           {currentSubTask && <div className="text-xs font-mono text-slate-400">进行中...</div>}
         </div>
-        <div className="flex items-center gap-5">
-          <div className={`font-mono font-bold ${currentSubTask ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600'} text-3xl min-w-[90px] text-center`}>
+        <div className="flex items-center gap-3">
+          <div className={`font-mono font-bold ${currentSubTask ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600'} text-2xl min-w-[70px] text-center`}>
             {formatDuration(subElapsed).replace('h ', ':').replace('m', '')}
           </div>
           <div className="flex-1">
             {!currentSubTask ? (
               <div className="flex gap-2">
-                <input type="text" value={subTaskName} onChange={(e) => setSubTaskName(e.target.value)} placeholder="并行任务..." className={`flex-1 px-4 py-2.5 text-sm ${inputStyle}`} onKeyDown={(e) => e.key === 'Enter' && startSubTimer()} />
-                <button onClick={startSubTimer} className={`${btnSecondary} px-4 rounded-xl font-bold`}><Play size={16} fill="currentColor" /></button>
+                <input type="text" value={subTaskName} onChange={(e) => setSubTaskName(e.target.value)} placeholder="并行任务..." className={`flex-1 px-3 py-2 text-sm ${inputStyle}`} onKeyDown={(e) => e.key === 'Enter' && startSubTimer()} />
+                <button onClick={startSubTimer} className={`${btnSecondary} px-3 rounded-lg font-bold`}><Play size={14} fill="currentColor" /></button>
               </div>
             ) : (
-              <div className="flex gap-3 items-center bg-white dark:bg-slate-800 p-2 pr-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 pr-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex-1 text-sm font-bold text-slate-700 dark:text-slate-200 truncate pl-2">{currentSubTask.name}</div>
-                <button onClick={stopSubTimer} className="px-4 py-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-200 rounded-lg text-xs font-bold flex items-center gap-1"><Square size={12} fill="currentColor" /> 结束</button>
+                <button onClick={stopSubTimer} className="px-3 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-200 rounded-lg text-xs font-bold flex items-center gap-1"><Square size={12} fill="currentColor" /> 结束</button>
               </div>
             )}
           </div>
