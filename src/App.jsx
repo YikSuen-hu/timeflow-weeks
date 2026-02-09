@@ -1886,6 +1886,9 @@ function App() {
                         isPiPActive={true}
                         timerStr={formatTimer(elapsed)}
                         currentTaskName={currentTask ? currentTask.name : (taskName || 'Ready')}
+                        onStart={startTimer}
+                        onStop={stopTimer}
+                        isRunning={!!currentTask}
                       />
                     </div>
                   )}
