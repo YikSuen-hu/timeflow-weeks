@@ -853,18 +853,31 @@ const TimerInterface = ({
     >
 
       {/* Header */}
-      <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 ${isMiniMode || isPiPActive ? 'p-3 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing' : 'p-4'}`}>
+      <div className={`flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 ${isMiniMode || isPiPActive ? 'p-2 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing' : 'p-4'}`}>
         <div className="flex items-center gap-3">
-          {isMiniMode && !isPiPActive && <Move size={14} className="text-slate-400 mr-1" />}
-          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-            <Clock size={18} />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">TimeFlow</div>
-            <div className="font-mono text-xl font-bold text-slate-800 dark:text-white leading-none tracking-tight">
-              {formatFullTime(currentTime)}
+          {isPiPActive ? (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <Clock size={14} />
+              </div>
+              <div className="font-mono text-sm font-bold text-slate-800 dark:text-white leading-none">
+                {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {isMiniMode && <Move size={14} className="text-slate-400 mr-1" />}
+              <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <Clock size={18} />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">TimeFlow</div>
+                <div className="font-mono text-xl font-bold text-slate-800 dark:text-white leading-none tracking-tight">
+                  {formatFullTime(currentTime)}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         <div className="flex gap-2 relative z-50">
 
@@ -878,7 +891,7 @@ const TimerInterface = ({
             </button>
           )}
           <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors">
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           {!isPiPActive && (
             <button onClick={() => setIsMiniMode(!isMiniMode)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors">
@@ -889,11 +902,11 @@ const TimerInterface = ({
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-5' : 'p-4 pb-6'}`}>
-        <div className="text-center mb-4 relative group">
-          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-4 leading-none ${isMiniMode || isPiPActive ? 'text-6xl' : 'text-7xl tracking-tighter'}`}>
+      <div className={`flex-1 relative ${isMiniMode || isPiPActive ? 'p-3' : 'p-4 pb-6'}`}>
+        <div className="text-center mb-2 relative group">
+          <div className={`font-mono font-bold text-slate-800 dark:text-white transition-all duration-300 flex items-end justify-center gap-2 leading-none ${isPiPActive ? 'text-5xl' : (isMiniMode ? 'text-6xl' : 'text-7xl tracking-tighter')}`}>
             <span className="leading-none">{formatDuration(elapsed).replace('h ', ':').replace('m', '')}</span>
-            <span className={`text-base font-medium text-slate-400 mb-2 w-16 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
+            <span className={`text-sm font-medium text-slate-400 mb-1 w-10 text-left ${isMiniMode || isPiPActive ? '' : ''}`}>
               {elapsed < 3600 ? 'mm:ss' : 'hh:mm'}
             </span>
             {!isMiniMode && !isPiPActive && (
@@ -909,9 +922,9 @@ const TimerInterface = ({
             </div>
           )}
           {currentTask && (
-            <div className="flex items-center justify-center gap-2 mt-2 animate-fade-in">
+            <div className="flex items-center justify-center gap-2 mt-1 animate-fade-in">
               <div className="h-1.5 w-1.5 rounded-full animate-ping" style={{ backgroundColor: currentCat.color }}></div>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full truncate max-w-[150px]">
                 {currentTask.name}
               </span>
             </div>
