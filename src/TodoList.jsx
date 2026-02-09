@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, CheckCircle, Circle, PictureInPicture2, Play, Square } from 'lucide-react';
 
-const TodoList = ({ todos, setTodos, togglePiP, isPiPActive, timerStr, currentTaskName }) => {
+const TodoList = ({ todos, setTodos, togglePiP, isPiPActive, timerStr, currentTaskName, onStart, onStop, isRunning }) => {
     const [newTodo, setNewTodo] = useState('');
 
     const handleAddTodo = (e) => {
