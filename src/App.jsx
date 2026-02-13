@@ -176,6 +176,7 @@ const splitTasksAcrossDays = (taskList) => {
       if (currentSegmentEnd > currentSegmentStart) {
         segments.push({
           ...task,
+          originalId: task.id,
           id: `${task.id}_${currentSegmentStart.getTime()}`,
           startTime: currentSegmentStart.toISOString(),
           endTime: currentSegmentEnd.toISOString(),
@@ -1471,10 +1472,11 @@ function App() {
   };
 
   const startTimer = () => {
-    if (!taskName.trim()) return;
+    const finalName = taskName.trim() || '未命名任务';
+    setTaskName(finalName);
     const newTask = {
       id: generateId(),
-      name: taskName,
+      name: finalName,
       startTime: new Date().toISOString(),
       duration: 0,
       categoryId: selectedCategoryId,
@@ -1631,7 +1633,7 @@ function App() {
       const fmt = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
       setManualForm({
-        id: task.id,
+        id: task.originalId || task.id,
         name: task.name,
         date: task.date,
         startTime: fmt(start),
@@ -1658,7 +1660,7 @@ function App() {
   const saveManualEntry = () => {
     if (!manualForm.name) return alert('请输入任务名称');
 
-    const createEntry = (date, start, end) => {
+    const createEntry = (date, start, end, existingId = null) => {
       // Explicitly construct dates in local time to avoid any timezone shifts
       const [y, m, d] = date.split('-').map(Number);
       const [h, min] = start.split(':').map(Number);
@@ -1674,7 +1676,7 @@ function App() {
 
       const duration = Math.floor((endDateTime - startDateTime) / 1000);
       const newTask = {
-        id: generateId(), // Always new ID for bulk creation or individual
+        id: existingId || generateId(),
         name: manualForm.name,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
@@ -1695,19 +1697,16 @@ function App() {
       }
     } else {
       // Single Entry Logic (Legacy/Standard)
-      // Reuse logic but need to handle ID for edits
-      const baseTask = createEntry(manualForm.date, manualForm.startTime, manualForm.endTime);
-      // Restore ID if editing
-      if (manualForm.id) baseTask.id = manualForm.id;
+      const baseTask = createEntry(manualForm.date, manualForm.startTime, manualForm.endTime, manualForm.id);
 
       if (manualForm.type === 'plan') {
         if (manualForm.id) {
           setPlans(plans.map(p => p.id === manualForm.id ? baseTask : p));
         } else {
-          setPlans([...plans, { ...baseTask, id: generateId() }]);
+          setPlans([...plans, baseTask]);
         }
         if (currentPage === 'board') {
-          setCurrentPage('dashboard');
+          // setCurrentPage('dashboard'); // Optional: stay on board
         }
       } else {
         if (manualForm.id) {

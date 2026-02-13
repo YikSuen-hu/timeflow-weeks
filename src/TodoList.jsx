@@ -42,7 +42,7 @@ const TodoList = ({ todos, setTodos, togglePiP, isPiPActive, timerStr, currentTa
                 ${isPiPActive ? 'text-sm mb-2' : 'text-lg mb-4'}`}>
                 <div className="flex items-center gap-2">
                     <CheckCircle size={isPiPActive ? 16 : 20} className="text-indigo-500" />
-                    小便签 (To-Do)
+                    小便签
                 </div>
 
                 {isPiPActive && timerStr && (
