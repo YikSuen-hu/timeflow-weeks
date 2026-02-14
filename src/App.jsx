@@ -1919,7 +1919,7 @@ function App() {
                       d.setDate(d.getDate() - 7);
                       setViewDate(toLocalDateString(d));
                     }}
-                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
+                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0 no-print"
                     title="上周"
                   >
                     <ChevronLeft size={32} />
@@ -1960,7 +1960,7 @@ function App() {
                       d.setDate(d.getDate() + 7);
                       setViewDate(toLocalDateString(d));
                     }}
-                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0"
+                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0 no-print"
                     title="下周"
                   >
                     <ChevronRight size={32} />
