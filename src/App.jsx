@@ -277,8 +277,8 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
   const isOffset = colIndex > 0;
   const isShared = layoutItem.hasOverlap; // New flag from getTaskLayout
 
-  // Detect if text is predominantly English (or numbers/symbols)
-  // const isEnglish = /^[A-Za-z0-9\s.,-]+$/.test(task.name);
+  // Detect if text is predominantly English (or numbers/symbols) - Strict ASCII check for rotation
+  const isASCII = /^[\x00-\x7F]*$/.test(task.name);
 
   return {
     top: `${topMM}mm`,
@@ -294,7 +294,7 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
     alignItems: 'center',
     justifyContent: 'center',
     writingMode: 'vertical-rl',
-    textOrientation: 'mixed',
+    textOrientation: isASCII ? 'sideways' : 'mixed',
     overflow: 'hidden',
     color: isPlan ? cat.color : '#fff',
     fontSize: getAdaptiveFontSize(heightMM, task.name),
