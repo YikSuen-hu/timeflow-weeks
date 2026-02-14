@@ -245,6 +245,19 @@ const getTaskLayout = (dayTasks) => {
     }
     placedTasks.push({ task, topMM, heightMM, colIndex });
   });
+
+  // Second pass: Detect overlaps for all tasks to adjust width
+  placedTasks.forEach(item => {
+    // A task has an overlap if it intersects with ANY other task (regardless of column)
+    // Intersection: (StartA < EndB) and (EndA > StartB)
+    const hasOverlap = placedTasks.some(other =>
+      other !== item &&
+      item.topMM < other.topMM + other.heightMM &&
+      item.topMM + item.heightMM > other.topMM
+    );
+    item.hasOverlap = hasOverlap;
+  });
+
   return placedTasks;
 };
 
@@ -262,6 +275,7 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
   const catId = task.categoryId || task.category?.id;
   const cat = getCategory(categories, catId);
   const isOffset = colIndex > 0;
+  const isShared = layoutItem.hasOverlap; // New flag from getTaskLayout
 
   // Detect if text is predominantly English (or numbers/symbols)
   const isEnglish = /^[A-Za-z0-9\s.,-]+$/.test(task.name);
@@ -273,7 +287,7 @@ const getTaskStyle = (layoutItem, categories, isPlan = false) => {
     border: isPlan ? `1px dashed ${cat.color}` : 'none',
     position: 'absolute',
     left: isOffset ? '50%' : '0%',
-    width: isOffset ? '50%' : '100%',
+    width: isShared ? '50%' : '100%', // Share width if overlapped
     borderRadius: '0.5px',
     zIndex: 10 + colIndex,
     display: 'flex',
