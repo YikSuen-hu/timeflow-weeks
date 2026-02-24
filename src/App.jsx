@@ -84,7 +84,8 @@ const COLOR_PALETTES = {
   '复古绿': ['#8FBC8F', '#A3C1AD', '#556B2F', '#6B8E23', '#CADFCD', '#4F7942', '#D0E0D0'],
   '静谧蓝': ['#B0C4DE', '#ADD8E6', '#87CEFA', '#4682B4', '#5F9EA0', '#778899', '#E0FFFF'],
   '大地色': ['#D2B48C', '#BC8F8F', '#F4A460', '#DEB887', '#CD853F', '#A0522D', '#FFF5EE'],
-  '高饱和': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#6366f1']
+  '高饱和': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#6366f1'],
+  '低饱和': ['#a3b8cc', '#b8ccb8', '#ccb8a3', '#b8a3cc', '#cca3a3', '#ccb8cc', '#c0c0c0']
 };
 
 const DEFAULT_CATEGORIES = [
