@@ -1016,8 +1016,17 @@ const TimerInterface = ({
   );
 };
 
-const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, categories, applyColorPalette, updateCategory, removeCategory, addCategory, resetCategories }) => {
+const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, categories, applyColorPalette, updateCategory, removeCategory, addCategory, resetCategories, exportData, importData }) => {
   if (!isCategoryModalOpen) return null;
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => importData(event.target.result);
+      reader.readAsText(file);
+    }
+  };
 
   const inputStyle = "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl";
 
@@ -1058,7 +1067,17 @@ const CategoryManagerModal = ({ isCategoryModalOpen, setIsCategoryModalOpen, cat
           </div>
           <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-2">
             <button onClick={addCategory} className="flex-1 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg text-sm font-medium flex items-center justify-center gap-1 transition-colors"><Plus size={16} /> 添加新分类</button>
-            <button onClick={resetCategories} className="px-3 py-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm transition-colors"><RotateCcw size={16} /></button>
+            <button onClick={resetCategories} className="px-3 py-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm transition-colors" title="重置分类"><RotateCcw size={16} /></button>
+          </div>
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">数据备份与同步 (选项1)</div>
+            <div className="flex gap-2">
+              <button onClick={exportData} className="flex-1 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors">导出数据 (.json)</button>
+              <label className="flex-1 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center cursor-pointer">
+                导入数据
+                <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -1641,6 +1660,47 @@ function App() {
     if (confirm('恢复默认分类？')) setCategories(DEFAULT_CATEGORIES);
   };
 
+  const exportData = () => {
+    try {
+      const data = {
+        tasks,
+        plans,
+        categories,
+        todos,
+        exportVersion: 1,
+        exportDate: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timeflow_backup_${toLocalDateString(new Date())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("导出失败: " + err.message);
+    }
+  };
+
+  const importData = (jsonString) => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data && typeof data === 'object') {
+        if (data.tasks) setTasks(data.tasks);
+        if (data.plans) setPlans(data.plans);
+        if (data.categories) setCategories(data.categories);
+        if (data.todos) setTodos(data.todos);
+        alert("数据导入成功！");
+      } else {
+        alert("导入的 JSON 格式不正确");
+      }
+    } catch (err) {
+      alert("解析 JSON 文件失败: " + err.message);
+    }
+  };
+
   const openManualModal = (type = 'actual', task = null) => {
     if (task) {
       const start = new Date(task.startTime);
@@ -1790,6 +1850,8 @@ function App() {
           removeCategory={removeCategory}
           addCategory={addCategory}
           resetCategories={resetCategories}
+          exportData={exportData}
+          importData={importData}
         />
 
         {currentPage === 'printer' ? (
