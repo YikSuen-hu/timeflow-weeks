@@ -1920,7 +1920,8 @@ function App() {
                       d.setDate(d.getDate() - 7);
                       setViewDate(toLocalDateString(d));
                     }}
-                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0 no-print"
+                    className="z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0 no-print"
+                    style={{ marginTop: '112.5mm', transform: 'translateY(-50%)' }}
                     title="上周"
                   >
                     <ChevronLeft size={32} />
@@ -1941,7 +1942,7 @@ function App() {
                     />
 
                     {/* Floating Action Buttons - Inside Relative Container */}
-                    <div className="absolute -right-12 bottom-0 flex flex-col gap-3 print:hidden">
+                    <div className="absolute -right-12 flex flex-col gap-3 print:hidden" style={{ bottom: 'calc(15rem - 45mm)' }}>
                       <button onClick={() => openManualModal('plan')} className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-all hover:scale-110" title="计划预定">
                         <Calendar size={18} />
                       </button>
@@ -1961,7 +1962,8 @@ function App() {
                       d.setDate(d.getDate() + 7);
                       setViewDate(toLocalDateString(d));
                     }}
-                    className="sticky top-1/2 -translate-y-1/2 z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0 no-print"
+                    className="z-10 py-10 px-2 bg-white dark:bg-slate-800 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all shrink-0 no-print"
+                    style={{ marginTop: '112.5mm', transform: 'translateY(-50%)' }}
                     title="下周"
                   >
                     <ChevronRight size={32} />
