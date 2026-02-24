@@ -39,6 +39,7 @@ const PrintStyles = () => (
         border: none !important;
         background: transparent !important;
         margin: 0 auto;
+        transform: none !important;
       }
       .print-chart-container {
         background: white;
