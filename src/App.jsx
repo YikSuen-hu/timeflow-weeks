@@ -163,17 +163,17 @@ const splitTasksAcrossDays = (taskList) => {
 
     while (currentSegmentStart < endTime) {
       let logicalDayStart = new Date(currentSegmentStart);
-      if (logicalDayStart.getHours() < 7) {
+      if (logicalDayStart.getHours() < 6) {
         logicalDayStart.setDate(logicalDayStart.getDate() - 1);
       }
-      logicalDayStart.setHours(7, 0, 0, 0);
+      logicalDayStart.setHours(6, 0, 0, 0);
 
       let logicalDayEnd = new Date(logicalDayStart);
-      logicalDayEnd.setDate(logicalDayEnd.getDate() + 1); // Next day 07:00
+      logicalDayEnd.setDate(logicalDayEnd.getDate() + 1); // Next day 06:00
 
       let currentSegmentEnd = new Date(Math.min(endTime.getTime(), logicalDayEnd.getTime()));
 
-      // Force segment end to match 7AM boundary if crossing it (though usually safe within split logic)
+      // Force segment end to match 6AM boundary if crossing it (though usually safe within split logic)
       if (currentSegmentEnd > currentSegmentStart) {
         segments.push({
           ...task,
@@ -196,8 +196,8 @@ const calculateTopHeight = (task) => {
   const start = new Date(task.startTime);
   let h = start.getHours();
   const m = start.getMinutes();
-  const adjustedH = h < 7 ? h + 24 : h;
-  const startHourMetric = (adjustedH - 7) + (m / 60); // 0.0 to 24.0
+  const adjustedH = h < 6 ? h + 24 : h;
+  const startHourMetric = (adjustedH - 6) + (m / 60); // 0.0 to 24.0
 
   let topMM = 0;
   // Calculate Top Position
@@ -510,8 +510,8 @@ const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal,
   if (currentTime) {
     const h = currentTime.getHours();
     const m = currentTime.getMinutes();
-    const adjustedH = h < 7 ? h + 24 : h;
-    const startHourMetric = (adjustedH - 7) + (m / 60);
+    const adjustedH = h < 6 ? h + 24 : h;
+    const startHourMetric = (adjustedH - 6) + (m / 60);
 
     if (startHourMetric < HOURS_DAY_PART) {
       currentTimeTopMM = startHourMetric * HOUR_HEIGHT_DAY;
@@ -548,11 +548,11 @@ const StandardStrip = ({ weekDates, processedTasks, categories, openManualModal,
       <div className="flex relative w-full border-t border-gray-800">
         <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[8px] text-gray-400 font-mono text-right pr-1">
           {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
-            <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
+            <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(6 + i) % 24}</div>
           ))}
-          <div className="absolute w-full pt-[1px] font-bold text-black" style={{ top: `${HEIGHT_DAY_MM}mm`, height: '0px' }}>1</div>
+          <div className="absolute w-full pt-[1px] font-bold text-black" style={{ top: `${HEIGHT_DAY_MM}mm`, height: '0px' }}>0</div>
           {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => i > 0 && (
-            <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
+            <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{i}</div>
           ))}
         </div>
         <div className="relative" style={{ width: '28mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
@@ -650,11 +650,11 @@ const PlanActualStrip = ({ weekDates, processedTasks, processedPlans, categories
       <div className="flex relative w-full border-t border-gray-800">
         <div className="w-[5mm] relative border-r border-gray-300 flex-shrink-0 text-[8px] text-gray-400 font-mono text-right pr-1">
           {Array.from({ length: HOURS_DAY_PART }).map((_, i) => (
-            <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(7 + i) % 24 || 24}</div>
+            <div key={`d-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${i * HOUR_HEIGHT_DAY}mm`, height: '0px' }}>{(6 + i) % 24}</div>
           ))}
-          <div className="absolute w-full pt-[1px] font-bold text-black" style={{ top: `${HEIGHT_DAY_MM}mm`, height: '0px' }}>1</div>
+          <div className="absolute w-full pt-[1px] font-bold text-black" style={{ top: `${HEIGHT_DAY_MM}mm`, height: '0px' }}>0</div>
           {Array.from({ length: HOURS_NIGHT_PART }).map((_, i) => i > 0 && (
-            <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{1 + i}</div>
+            <div key={`n-${i}`} className="absolute w-full pt-[1px]" style={{ top: `${HEIGHT_DAY_MM + i * HOUR_HEIGHT_NIGHT}mm`, height: '0px' }}>{i}</div>
           ))}
         </div>
         <div className="relative" style={{ width: '56mm', height: `${TOTAL_HEIGHT_MM}mm` }}>
