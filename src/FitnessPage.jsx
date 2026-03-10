@@ -135,7 +135,7 @@ export default function FitnessPage() {
     }, [todayRecords, totalSetsToday]);
 
     return (
-        <div className="pb-20 pt-6 px-4 md:px-5 max-w-[1240px] mx-auto min-h-screen animate-fade-in-up">
+        <div className="pb-20 pt-6 px-4 md:px-5 max-w-[1100px] mx-auto min-h-screen animate-fade-in-up">
             <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
                     <Dumbbell size={24} />
@@ -146,7 +146,7 @@ export default function FitnessPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-11 gap-5 lg:gap-6">
                 {/* Left Form */}
                 <div className="lg:col-span-4 xl:col-span-3 space-y-5 order-2 lg:order-1">
                     <div className="bg-white dark:bg-slate-800 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-slate-700">
@@ -262,8 +262,8 @@ export default function FitnessPage() {
                 </div>
 
                 {/* Middle List */}
-                <div className="lg:col-span-8 xl:col-span-6 space-y-5 order-3 lg:order-2">
-                    <div className="bg-slate-50/50 dark:bg-slate-800/20 rounded-[28px] p-5 md:p-6 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
+                <div className="lg:col-span-7 xl:col-span-5 space-y-5 order-3 lg:order-2">
+                    <div className="bg-slate-50/50 dark:bg-slate-800/20 rounded-[28px] p-4 md:p-5 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
                                 <CalendarIcon size={24} className="text-indigo-500" />
@@ -287,47 +287,47 @@ export default function FitnessPage() {
                                     const displaySets = record.sets ? record.sets : [{ id: record.id + '_legacy', weight: record.weight, reps: record.reps, feeling: record.feeling }];
 
                                     return (
-                                        <div key={record.id} className="mb-6 group">
-                                            <div className="flex justify-between items-center mb-3 p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700 transition-all hover:border-indigo-200 dark:hover:border-indigo-500/30">
-                                                <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5 text-base md:text-[17px]">
-                                                    <div className="w-1.5 h-5 bg-indigo-500 rounded-full shadow-sm"></div>
+                                        <div key={record.id} className="mb-5 p-4 md:p-5 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-700 transition-all hover:shadow-md group">
+                                            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-700/50">
+                                                <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-base md:text-lg">
+                                                    <div className="w-1.5 h-4 bg-indigo-500 rounded-full shadow-sm"></div>
                                                     {record.exercise}
-                                                    <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full uppercase tracking-wider relative -top-0.5 ml-1">
+                                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-md uppercase ml-1.5">
                                                         {dayName}
                                                     </span>
                                                 </div>
                                                 <button
                                                     onClick={() => deleteRecord(record.id)}
-                                                    className="p-2 bg-slate-50 dark:bg-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl shadow-sm border border-slate-100 dark:border-slate-600 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-1.5 bg-slate-50 dark:bg-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg shadow-sm border border-slate-100 dark:border-slate-600 transition-all opacity-0 group-hover:opacity-100"
                                                     title="删除此锻炼项目"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
 
-                                            <div className="flex flex-wrap gap-x-2.5 gap-y-3 px-1">
+                                            <div className="flex flex-wrap border-2 border-slate-100 dark:border-slate-700/60 rounded-2xl bg-slate-50 dark:bg-slate-800/40 overflow-hidden divide-x-2 divide-slate-100 dark:divide-slate-700/60">
                                                 {displaySets.map((set, setIdx) => {
                                                     const emojiFeeling = EMOJI_FEELINGS.find(f => f.id === set.feeling);
                                                     const emoji = emojiFeeling?.emoji || '⚡';
                                                     const emojiLabel = emojiFeeling?.label.split(' ')[0] || '';
 
                                                     return (
-                                                        <div key={set.id} className="flex-1 min-w-[110px] max-w-[200px] p-2 sm:p-2.5 bg-white dark:bg-slate-800/80 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center gap-1.5 relative transition-all hover:shadow-md">
-                                                            <div className="absolute -top-2.5 -left-2 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-sm border border-white dark:border-slate-800 font-mono">
+                                                        <div key={set.id} className="flex-1 min-w-[90px] p-3 flex flex-col items-center justify-center gap-1.5 hover:bg-white dark:hover:bg-slate-700/50 transition-colors">
+                                                            <div className="text-slate-400 font-mono text-[9px] font-extrabold uppercase tracking-widest opacity-80 mb-0.5">
                                                                 #{setIdx + 1}
                                                             </div>
 
-                                                            <div className="font-mono flex items-baseline justify-center gap-1 w-full pt-1">
-                                                                <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">{set.weight}</span>
-                                                                <span className="text-[10px] text-slate-400">kg</span>
+                                                            <div className="font-mono flex items-baseline justify-center gap-1 w-full pt-0.5">
+                                                                <span className="text-[15px] font-bold text-indigo-600 dark:text-indigo-400">{set.weight}</span>
+                                                                <span className="text-[9px] text-slate-400">kg</span>
                                                                 <span className="text-slate-300 dark:text-slate-600 text-xs mx-0.5">×</span>
-                                                                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{set.reps}</span>
-                                                                <span className="text-[10px] text-slate-400">次</span>
+                                                                <span className="text-[15px] font-bold text-emerald-600 dark:text-emerald-400">{set.reps}</span>
+                                                                <span className="text-[9px] text-slate-400">次</span>
                                                             </div>
 
-                                                            <div className="flex items-center justify-center gap-1.5 w-full bg-slate-50 dark:bg-slate-700/50 rounded-lg py-1">
-                                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{emojiLabel}</span>
-                                                                <span className="text-base drop-shadow-sm leading-none" title={emojiFeeling?.label}>{emoji}</span>
+                                                            <div className="flex items-center justify-center gap-1 w-full mt-1">
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{emojiLabel}</span>
+                                                                <span className="text-sm drop-shadow-sm leading-none ml-1" title={emojiFeeling?.label}>{emoji}</span>
                                                             </div>
                                                         </div>
                                                     )
