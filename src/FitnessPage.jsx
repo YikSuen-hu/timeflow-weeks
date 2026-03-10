@@ -146,9 +146,9 @@ export default function FitnessPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
                 {/* Left Form */}
-                <div className="lg:col-span-3 space-y-5 order-2 lg:order-1">
+                <div className="md:col-span-3 lg:col-span-3 space-y-5 order-2 md:order-1">
                     <div className="bg-white dark:bg-slate-800 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-slate-700">
                         <h2 className="text-[17px] font-bold text-slate-700 dark:text-slate-200 mb-5 flex items-center gap-2">
                             <span className="w-1.5 h-5 bg-indigo-500 rounded-full inline-block shadow-sm"></span>
@@ -264,7 +264,7 @@ export default function FitnessPage() {
             </div>
 
             {/* Middle List */}
-            <div className="lg:col-span-6 space-y-5 order-3 lg:order-2">
+            <div className="md:col-span-6 lg:col-span-6 space-y-5 order-3 md:order-2">
                 <div className="bg-slate-50/50 dark:bg-slate-800/20 rounded-[28px] p-4 md:p-5 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
@@ -344,9 +344,9 @@ export default function FitnessPage() {
             </div>
 
             {/* Right Summary */}
-            <div className="lg:col-span-3 space-y-5 order-1 lg:order-3">
+            <div className="md:col-span-3 lg:col-span-3 space-y-5 order-1 md:order-3">
                 {summary && (
-                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[28px] p-5 lg:p-6 shadow-md shadow-indigo-500/20 text-white relative overflow-hidden lg:sticky lg:top-6">
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[28px] p-4 md:p-5 lg:p-6 shadow-md shadow-indigo-500/20 text-white relative overflow-hidden md:sticky md:top-6">
                         <div className="absolute -right-6 -top-6 opacity-10">
                             <BarChart2 size={140} strokeWidth={3} />
                         </div>
@@ -356,7 +356,7 @@ export default function FitnessPage() {
                             今日训练速览
                         </h2>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3.5 relative z-10">
+                        <div className="grid grid-cols-2 lg:grid-cols-1 2xl:grid-cols-1 gap-3.5 relative z-10">
                             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all">
                                 <div className="text-indigo-100 text-[11px] font-bold mb-1.5 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
                                     <Target size={14} /> 训练部位
