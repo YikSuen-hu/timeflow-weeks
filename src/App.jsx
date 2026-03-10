@@ -5,11 +5,12 @@ import {
   Play, Square, Maximize2, Minimize2, Printer, Trash2,
   Clock, ChevronRight, ChevronLeft, CheckCircle, Plus,
   Edit2, X, Save, Settings, RotateCcw, Zap, Eye, EyeOff, Moon, Sun,
-  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon, Layout, FastForward, ChevronDown
+  BarChart2, PieChart, Calendar, PictureInPicture2, Move, Image as ImageIcon, Layout, FastForward, ChevronDown, Dumbbell
 } from 'lucide-react';
 import TaskBoard from './TaskBoard';
 import TodoList from './TodoList';
 import MonthView from './MonthView';
+import FitnessPage from './FitnessPage';
 
 // --- 1. Styles & Constants ---
 
@@ -1227,6 +1228,7 @@ const SideNav = ({ activePage, onNavigate }) => {
     { id: 'dashboard', icon: Calendar, label: '日程手账' },
     { id: 'board', icon: Layout, label: '任务看板' },
     { id: 'month', icon: Calendar, label: '月历视图' },
+    { id: 'fitness', icon: Dumbbell, label: '身材管理' },
     { id: 'printer', icon: Printer, label: '素材打印' },
   ];
 
@@ -1874,6 +1876,8 @@ function App() {
           />
         ) : currentPage === 'month' ? (
           <MonthView todos={todos} />
+        ) : currentPage === 'fitness' ? (
+          <FitnessPage />
         ) : (
           <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 transition-all duration-500 container mx-auto decoration-clone">
             <div className={`flex flex-col xl:flex-row gap-6 items-start`}>
