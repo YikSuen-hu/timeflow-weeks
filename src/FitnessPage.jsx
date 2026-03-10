@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Dumbbell, Calendar as CalendarIcon, Save, Trash2 } from 'lucide-react';
+import { ChevronRight, Dumbbell, Calendar as CalendarIcon, Save, Trash2, Plus, X } from 'lucide-react';
 
 const FITNESS_DAYS = [
     { id: 'chest', name: '胸部 (Chest)', exercises: ['平板卧推', '上斜哑铃卧推', '下斜卧推', '蝴蝶机夹胸', '绳索飞鸟', '器械推胸', '俯卧撑'] },
     { id: 'back', name: '背部 (Back)', exercises: ['引体向上', '高位下拉', '杠铃划船', '坐姿划船', '单臂哑铃划船', '直臂下拉', '硬拉'] },
     { id: 'legs', name: '腿部 (Legs)', exercises: ['深蹲', '倒蹬', '腿屈伸', '腿弯举', '罗马尼亚硬拉', '保加利亚分腿蹲', '提踵'] },
-    { id: 'shoulders', name: '肩部 (Shoulders)', exercises: ['杠铃推举', '哑铃侧平举', '坐姿哑铃推举', '反向飞鸟', '前平举', '面拉'] },
+    { id: 'shoulders', name: '肩部 (Shoulders)', exercises: ['杠铃推举', '哑铃侧平举', '坐姿哑铃推举', '反向飞鸟', '前平举', '面拉', '侧卧后束飞鸟'] },
     { id: 'arms', name: '手臂 (Arms)', exercises: ['杠铃弯举', '哑铃交替弯举', '绳索下压', '颈后臂屈伸', '牧师椅弯举', '锤式弯举'] },
     { id: 'core', name: '核心 (Core)', exercises: ['卷腹', '平板支撑', '俄罗斯挺身', '悬垂举腿', '健腹轮'] },
 ];
@@ -14,7 +14,8 @@ const EMOJI_FEELINGS = [
     { id: 1, emoji: '🤩', label: '极好 (状态拉满)' },
     { id: 2, emoji: '🙂', label: '良好 (正常完成)' },
     { id: 3, emoji: '😐', label: '一般 (有些吃力)' },
-    { id: 4, emoji: '😫', label: '艰难 (力竭/变形)' },
+    { id: 4, emoji: '😫', label: '艰难 (极其吃力)' },
+    { id: 5, emoji: '🥵', label: '极限 (完全透支)' },
 ];
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -28,12 +29,8 @@ const toLocalDateString = (date) => {
 export default function FitnessPage() {
     const [records, setRecords] = useState([]);
     const [selectedDay, setSelectedDay] = useState(FITNESS_DAYS[0].id);
-    const [form, setForm] = useState({
-        exercise: '',
-        weight: '',
-        reps: '',
-        feeling: 1,
-    });
+    const [exercise, setExercise] = useState('');
+    const [sets, setSets] = useState([{ id: generateId(), weight: '', reps: '', feeling: 1 }]);
 
     const today = toLocalDateString(new Date());
 
@@ -46,8 +43,8 @@ export default function FitnessPage() {
 
     useEffect(() => {
         const currentExercises = FITNESS_DAYS.find(d => d.id === selectedDay)?.exercises || [];
-        if (currentExercises.length > 0 && !currentExercises.includes(form.exercise)) {
-            setForm(prev => ({ ...prev, exercise: currentExercises[0] }));
+        if (currentExercises.length > 0 && !currentExercises.includes(exercise)) {
+            setExercise(currentExercises[0]);
         }
     }, [selectedDay]);
 
@@ -56,9 +53,30 @@ export default function FitnessPage() {
         localStorage.setItem('timeflow_fitness_records', JSON.stringify(newRecords));
     };
 
-    const handleAddRecord = () => {
-        if (!form.exercise || !form.weight || !form.reps) {
-            alert('请完整填写重量和次数/组数');
+    const handleAddSet = () => {
+        const lastSet = sets[sets.length - 1];
+        setSets([...sets, {
+            id: generateId(),
+            weight: lastSet ? lastSet.weight : '',
+            reps: lastSet ? lastSet.reps : '',
+            feeling: lastSet ? lastSet.feeling : 1
+        }]);
+    };
+
+    const handleRemoveSet = (id) => {
+        if (sets.length > 1) {
+            setSets(sets.filter(s => s.id !== id));
+        }
+    };
+
+    const updateSet = (id, field, value) => {
+        setSets(sets.map(s => s.id === id ? { ...s, [field]: value } : s));
+    };
+
+    const handleSaveRecord = () => {
+        const invalid = sets.some(s => !s.weight || !s.reps);
+        if (invalid || !exercise) {
+            alert('请完整填写所有组的重量和次数');
             return;
         }
 
@@ -66,24 +84,23 @@ export default function FitnessPage() {
             id: generateId(),
             date: today,
             dayType: selectedDay,
-            exercise: form.exercise,
-            weight: form.weight,
-            reps: form.reps,
-            feeling: form.feeling,
+            exercise: exercise,
+            sets: sets.map(s => ({ ...s })),
             timestamp: new Date().toISOString()
         };
 
         saveRecords([newRecord, ...records]);
-        setForm(prev => ({ ...prev, reps: '', feeling: 1 }));
+        setSets([{ id: generateId(), weight: '', reps: '', feeling: 1 }]);
     };
 
     const deleteRecord = (id) => {
-        if (confirm('确定删除这条记录吗？')) {
+        if (confirm('确定删除这个动作的所有记录吗？')) {
             saveRecords(records.filter(r => r.id !== id));
         }
     };
 
     const todayRecords = records.filter(r => r.date === today);
+    const totalSetsToday = todayRecords.reduce((acc, curr) => acc + (curr.sets ? curr.sets.length : 1), 0);
 
     return (
         <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 max-w-5xl mx-auto min-h-screen animate-fade-in-up">
@@ -97,16 +114,16 @@ export default function FitnessPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Left Form */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className="xl:col-span-1 space-y-6">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
                         <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2">
                             <span className="w-2 h-6 bg-indigo-500 rounded-full inline-block"></span>
                             今日训练录入
                         </h2>
 
-                        <div className="space-y-5">
+                        <div className="space-y-6">
                             <div>
                                 <label className="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">1. 训练部位</label>
                                 <div className="flex flex-wrap gap-2">
@@ -125,12 +142,12 @@ export default function FitnessPage() {
                                 </div>
                             </div>
 
-                            <div className="pt-2">
+                            <div>
                                 <label className="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">2. 选择动作</label>
                                 <div className="relative">
                                     <select
-                                        value={form.exercise}
-                                        onChange={(e) => setForm({ ...form, exercise: e.target.value })}
+                                        value={exercise}
+                                        onChange={(e) => setExercise(e.target.value)}
                                         className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-bold appearance-none cursor-pointer"
                                     >
                                         {FITNESS_DAYS.find(d => d.id === selectedDay)?.exercises.map(ex => (
@@ -143,58 +160,69 @@ export default function FitnessPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 pt-2">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">重量 (kg)</label>
-                                    <input
-                                        type="number"
-                                        value={form.weight}
-                                        onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                                        placeholder="如: 60"
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">次数</label>
-                                    <input
-                                        type="number"
-                                        value={form.reps}
-                                        onChange={(e) => setForm({ ...form, reps: e.target.value })}
-                                        placeholder="如: 12"
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="pt-2">
-                                <label className="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-2">3. 本组状态</label>
-                                <div className="flex gap-2 justify-between">
-                                    {EMOJI_FEELINGS.map(f => (
-                                        <button
-                                            key={f.id}
-                                            onClick={() => setForm({ ...form, feeling: f.id })}
-                                            className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-300 ${form.feeling === f.id
-                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 scale-105 shadow-sm'
-                                                    : 'border-transparent bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900'
-                                                }`}
-                                            title={f.label}
-                                        >
-                                            <span className="text-3xl filter hover:brightness-110 transition-all">{f.emoji}</span>
-                                            <span className={`text-[10px] mt-1 font-bold ${form.feeling === f.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
-                                                {f.label.split(' ')[0]}
-                                            </span>
-                                        </button>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-3">3. 训练组计划</label>
+                                <div className="flex flex-col gap-3">
+                                    {sets.map((set, idx) => (
+                                        <div key={set.id} className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl relative group transition-all">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="font-bold text-indigo-500 dark:text-indigo-400 text-sm bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 rounded-md">第 {idx + 1} 组</span>
+                                                {sets.length > 1 && (
+                                                    <button onClick={() => handleRemoveSet(set.id)} className="text-slate-400 hover:text-rose-500 bg-white dark:bg-slate-800 p-1 rounded-md shadow-sm border border-slate-100 dark:border-slate-700 transition-colors" title="删除本组">
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                                <div>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="重量(kg)"
+                                                        value={set.weight}
+                                                        onChange={e => updateSet(set.id, 'weight', e.target.value)}
+                                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="次数"
+                                                        value={set.reps}
+                                                        onChange={e => updateSet(set.id, 'reps', e.target.value)}
+                                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between gap-1">
+                                                {EMOJI_FEELINGS.map(f => (
+                                                    <button
+                                                        key={f.id}
+                                                        onClick={() => updateSet(set.id, 'feeling', f.id)}
+                                                        className={`flex-1 py-1.5 rounded-lg border flex justify-center text-xl transition-all ${set.feeling === f.id ? 'bg-white dark:bg-slate-800 border-indigo-400 shadow-sm scale-110 z-10' : 'bg-transparent border-transparent hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm opacity-60 hover:opacity-100'}`}
+                                                        title={f.label}
+                                                        type="button"
+                                                    >
+                                                        {f.emoji}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
+
+                                    <button onClick={handleAddSet} type="button" className="py-3 mt-1 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all font-bold">
+                                        <Plus size={18} /> 添加一组
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="pt-4">
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
                                 <button
-                                    onClick={handleAddRecord}
+                                    onClick={handleSaveRecord}
+                                    type="button"
                                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 transition-all hover:-translate-y-1 active:translate-y-0"
                                 >
                                     <Save size={20} />
-                                    记录完成1组
+                                    记录完成 {sets.length} 组
                                 </button>
                             </div>
                         </div>
@@ -202,15 +230,15 @@ export default function FitnessPage() {
                 </div>
 
                 {/* Right List */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                <CalendarIcon size={20} className="text-indigo-500" />
-                                今日记录列表 <span className="text-slate-400 font-mono text-sm ml-2">{today}</span>
+                <div className="xl:col-span-2 space-y-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                                <CalendarIcon size={24} className="text-indigo-500" />
+                                今日记录列表 <span className="text-slate-400 font-mono text-sm ml-2 bg-slate-100 dark:bg-slate-700/50 px-3 py-1 rounded-full">{today}</span>
                             </h2>
-                            <div className="text-sm font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 dark:text-indigo-400 px-4 py-1.5 rounded-full shadow-sm">
-                                已完成 {todayRecords.length} 组
+                            <div className="text-sm font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 dark:text-indigo-400 px-4 py-2 rounded-full shadow-sm">
+                                今日已完成 {totalSetsToday} 组
                             </div>
                         </div>
 
@@ -221,45 +249,54 @@ export default function FitnessPage() {
                                 <p className="text-sm mt-2 text-slate-400">选择左侧部位和动作，记录每一组的表现。</p>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-6">
                                 {todayRecords.map((record, idx) => {
                                     const dayName = FITNESS_DAYS.find(d => d.id === record.dayType)?.name.split(' ')[0] || record.dayType;
-                                    const emoji = EMOJI_FEELINGS.find(f => f.id === record.feeling)?.emoji || '⚡';
+                                    const displaySets = record.sets ? record.sets : [{ id: record.id + '_legacy', weight: record.weight, reps: record.reps, feeling: record.feeling }];
 
                                     return (
-                                        <div key={record.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 hover:shadow-md transition-all group">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-2xl border border-slate-100 dark:border-slate-600">
-                                                    {emoji}
+                                        <div key={record.id} className="p-5 md:p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60 hover:shadow-md transition-all group">
+                                            <div className="flex justify-between items-center mb-5 border-b border-slate-200 dark:border-slate-700/50 pb-4">
+                                                <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3 text-lg md:text-xl">
+                                                    <div className="w-2 h-6 bg-indigo-400 rounded-full"></div>
+                                                    {record.exercise}
+                                                    <span className="text-[11px] font-bold text-slate-500 bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-full uppercase tracking-wider relative -top-0.5">
+                                                        {dayName}
+                                                    </span>
                                                 </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 text-lg">
-                                                        {record.exercise}
-                                                        <span className="text-[10px] font-bold text-slate-500 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                            {dayName}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-sm text-slate-500 mt-1 font-mono flex items-center gap-2">
-                                                        <span className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded-lg font-bold">
-                                                            {record.weight}
-                                                            <span className="text-[10px] ml-0.5 text-indigo-500/70">kg</span>
-                                                        </span>
-                                                        <span className="text-slate-300 dark:text-slate-600">×</span>
-                                                        <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 px-2 py-0.5 rounded-lg font-bold">
-                                                            {record.reps}
-                                                            <span className="text-[10px] ml-0.5 text-emerald-500/70">次</span>
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                                <button
+                                                    onClick={() => deleteRecord(record.id)}
+                                                    className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600 transition-all opacity-0 group-hover:opacity-100"
+                                                    title="删除此锻炼项目"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
 
-                                            <button
-                                                onClick={() => deleteRecord(record.id)}
-                                                className="p-3 bg-white dark:bg-slate-800 text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all opacity-0 group-hover:opacity-100"
-                                                title="删除记录"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <div className="space-y-2.5">
+                                                {displaySets.map((set, setIdx) => {
+                                                    const emojiFeeling = EMOJI_FEELINGS.find(f => f.id === set.feeling);
+                                                    const emoji = emojiFeeling?.emoji || '⚡';
+                                                    const emojiLabel = emojiFeeling?.label.split(' ')[0] || '';
+
+                                                    return (
+                                                        <div key={set.id} className="flex flex-wrap sm:flex-nowrap justify-between items-center px-4 py-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-4">
+                                                            <div className="flex items-center gap-3 md:gap-6 w-full sm:w-auto">
+                                                                <div className="text-slate-400 font-bold font-mono w-6 text-center text-sm">#{setIdx + 1}</div>
+                                                                <div className="font-mono flex items-center gap-2 md:gap-4 text-base md:text-lg">
+                                                                    <div className="min-w-[4rem] text-right"><span className="text-indigo-600 dark:text-indigo-400 font-bold">{set.weight}</span> <span className="text-xs text-slate-400">kg</span></div>
+                                                                    <span className="text-slate-300 dark:text-slate-600">×</span>
+                                                                    <div className="min-w-[3rem] text-left"><span className="text-emerald-600 dark:text-emerald-400 font-bold">{set.reps}</span> <span className="text-xs text-slate-400">次</span></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 px-3 py-1.5 rounded-xl">
+                                                                <span className="text-xs font-bold text-slate-400">{emojiLabel}</span>
+                                                                <div className="text-2xl filter drop-shadow-sm" title={emojiFeeling?.label}>{emoji}</div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -267,9 +304,9 @@ export default function FitnessPage() {
                         )}
 
                         {records.length > todayRecords.length && (
-                            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center">
-                                <div className="px-4 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400">
-                                    历史上共有 {records.length - todayRecords.length} 条其它日期的训练记录
+                            <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col items-center">
+                                <div className="px-5 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 shadow-inner">
+                                    历史上共有 {records.length - todayRecords.length} 项其它的训练记录
                                 </div>
                             </div>
                         )}
