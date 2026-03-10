@@ -357,23 +357,29 @@ export default function FitnessPage() {
                                                 </button>
                                             </div>
 
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                            <div className="flex flex-wrap gap-x-3 gap-y-4 pt-2 mt-2">
                                                 {displaySets.map((set, setIdx) => {
                                                     const emojiFeeling = EMOJI_FEELINGS.find(f => f.id === set.feeling);
                                                     const emoji = emojiFeeling?.emoji || '⚡';
                                                     const emojiLabel = emojiFeeling?.label.split(' ')[0] || '';
 
                                                     return (
-                                                        <div key={set.id} className="flex flex-col items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-3">
-                                                            <div className="text-slate-400 font-bold font-mono text-xs w-full border-b border-slate-100 dark:border-slate-700 pb-1 mb-1">#{setIdx + 1}</div>
-                                                            <div className="font-mono text-center mb-1">
-                                                                <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{set.weight}<span className="text-[10px] text-slate-400 ml-0.5">kg</span></div>
-                                                                <div className="text-slate-300 dark:text-slate-600 text-xs">×</div>
-                                                                <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{set.reps}<span className="text-[10px] text-slate-400 ml-0.5">次</span></div>
+                                                        <div key={set.id} className="flex-1 min-w-[110px] max-w-[200px] p-2 sm:p-2.5 bg-white dark:bg-slate-800/80 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center gap-1.5 relative transition-all hover:shadow-md">
+                                                            <div className="absolute -top-2.5 -left-2 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-sm border border-white dark:border-slate-800 font-mono">
+                                                                #{setIdx + 1}
                                                             </div>
-                                                            <div className="flex flex-col items-center justify-center w-full pt-2 border-t border-slate-50 dark:border-slate-700/50">
-                                                                <span className="text-[10px] font-bold text-slate-400 mb-1">{emojiLabel}</span>
-                                                                <div className="text-2xl filter drop-shadow-sm leading-none" title={emojiFeeling?.label}>{emoji}</div>
+
+                                                            <div className="font-mono flex items-baseline justify-center gap-1 w-full pt-1">
+                                                                <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">{set.weight}</span>
+                                                                <span className="text-[10px] text-slate-400">kg</span>
+                                                                <span className="text-slate-300 dark:text-slate-600 text-xs mx-0.5">×</span>
+                                                                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{set.reps}</span>
+                                                                <span className="text-[10px] text-slate-400">次</span>
+                                                            </div>
+
+                                                            <div className="flex items-center justify-center gap-1.5 w-full bg-slate-50 dark:bg-slate-700/50 rounded-lg py-1">
+                                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{emojiLabel}</span>
+                                                                <span className="text-base drop-shadow-sm leading-none" title={emojiFeeling?.label}>{emoji}</span>
                                                             </div>
                                                         </div>
                                                     )
