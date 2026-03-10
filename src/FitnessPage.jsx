@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, Dumbbell, Calendar as CalendarIcon, Save, Trash2, Plus, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ChevronRight, Dumbbell, Calendar as CalendarIcon, Save, Trash2, Plus, X, BarChart2, Flame, Target, Activity } from 'lucide-react';
 
 const FITNESS_DAYS = [
     { id: 'chest', name: '胸部 (Chest)', exercises: ['平板卧推', '上斜哑铃卧推', '下斜卧推', '蝴蝶机夹胸', '绳索飞鸟', '器械推胸', '俯卧撑'] },
@@ -102,6 +102,38 @@ export default function FitnessPage() {
     const todayRecords = records.filter(r => r.date === today);
     const totalSetsToday = todayRecords.reduce((acc, curr) => acc + (curr.sets ? curr.sets.length : 1), 0);
 
+    const summary = useMemo(() => {
+        if (todayRecords.length === 0) return null;
+
+        const muscles = new Set(todayRecords.map(r => r.dayType));
+        const targetMuscles = Array.from(muscles).map(id => FITNESS_DAYS.find(d => d.id === id)?.name.split(' ')[0] || id).join(', ');
+
+        let totalVolume = 0;
+        let totalFeelingScore = 0;
+
+        todayRecords.forEach(record => {
+            const sets = record.sets || [{ weight: record.weight, reps: record.reps, feeling: record.feeling }];
+            sets.forEach(set => {
+                const weight = parseFloat(set.weight) || 0;
+                const reps = parseInt(set.reps) || 0;
+                totalVolume += weight * reps;
+                totalFeelingScore += (set.feeling || 3);
+            });
+        });
+
+        const avgFeelingId = Math.round(totalFeelingScore / totalSetsToday);
+        const dominantEmoji = EMOJI_FEELINGS.find(f => f.id === Math.max(1, Math.min(5, avgFeelingId)));
+
+        return {
+            targetMuscles,
+            totalExercises: todayRecords.length,
+            totalSets: totalSetsToday,
+            totalVolume,
+            statusLabel: dominantEmoji?.label.split(' ')[0] || '一般',
+            statusEmoji: dominantEmoji?.emoji || '😐'
+        };
+    }, [todayRecords, totalSetsToday]);
+
     return (
         <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 max-w-5xl mx-auto min-h-screen animate-fade-in-up">
             <div className="flex items-center gap-4 mb-8">
@@ -132,8 +164,8 @@ export default function FitnessPage() {
                                             key={day.id}
                                             onClick={() => setSelectedDay(day.id)}
                                             className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all duration-300 ${selectedDay === day.id
-                                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/40 scale-105'
-                                                    : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/40 scale-105'
+                                                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
                                                 }`}
                                         >
                                             {day.name.split(' ')[0]}
@@ -229,8 +261,60 @@ export default function FitnessPage() {
                     </div>
                 </div>
 
-                {/* Right List */}
+                {/* Right List & Summary */}
                 <div className="xl:col-span-2 space-y-6">
+                    {summary && (
+                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 shadow-md shadow-indigo-500/20 text-white relative overflow-hidden">
+                            <div className="absolute -right-6 -top-6 opacity-10">
+                                <BarChart2 size={120} strokeWidth={3} />
+                            </div>
+
+                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 opacity-90">
+                                <Activity size={20} />
+                                今日训练速览
+                            </h2>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        <Target size={14} /> 训练部位
+                                    </div>
+                                    <div className="font-extrabold text-lg truncate" title={summary.targetMuscles}>
+                                        {summary.targetMuscles}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        <Dumbbell size={14} /> 训练总量
+                                    </div>
+                                    <div className="font-extrabold text-lg">
+                                        {summary.totalExercises} <span className="text-sm font-normal opacity-80">动作</span> / {summary.totalSets} <span className="text-sm font-normal opacity-80">组</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        <Flame size={14} /> 训练总容量
+                                    </div>
+                                    <div className="font-extrabold text-lg flex items-baseline gap-1">
+                                        {summary.totalVolume.toLocaleString()} <span className="text-xs font-normal opacity-70">kg</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        今日状态
+                                    </div>
+                                    <div className="font-extrabold text-lg flex items-center gap-2">
+                                        <span className="text-2xl drop-shadow-sm">{summary.statusEmoji}</span>
+                                        <span>{summary.statusLabel}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
@@ -273,25 +357,23 @@ export default function FitnessPage() {
                                                 </button>
                                             </div>
 
-                                            <div className="space-y-2.5">
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                                                 {displaySets.map((set, setIdx) => {
                                                     const emojiFeeling = EMOJI_FEELINGS.find(f => f.id === set.feeling);
                                                     const emoji = emojiFeeling?.emoji || '⚡';
                                                     const emojiLabel = emojiFeeling?.label.split(' ')[0] || '';
 
                                                     return (
-                                                        <div key={set.id} className="flex flex-wrap sm:flex-nowrap justify-between items-center px-4 py-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-4">
-                                                            <div className="flex items-center gap-3 md:gap-6 w-full sm:w-auto">
-                                                                <div className="text-slate-400 font-bold font-mono w-6 text-center text-sm">#{setIdx + 1}</div>
-                                                                <div className="font-mono flex items-center gap-2 md:gap-4 text-base md:text-lg">
-                                                                    <div className="min-w-[4rem] text-right"><span className="text-indigo-600 dark:text-indigo-400 font-bold">{set.weight}</span> <span className="text-xs text-slate-400">kg</span></div>
-                                                                    <span className="text-slate-300 dark:text-slate-600">×</span>
-                                                                    <div className="min-w-[3rem] text-left"><span className="text-emerald-600 dark:text-emerald-400 font-bold">{set.reps}</span> <span className="text-xs text-slate-400">次</span></div>
-                                                                </div>
+                                                        <div key={set.id} className="flex flex-col items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-3">
+                                                            <div className="text-slate-400 font-bold font-mono text-xs w-full border-b border-slate-100 dark:border-slate-700 pb-1 mb-1">#{setIdx + 1}</div>
+                                                            <div className="font-mono text-center mb-1">
+                                                                <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{set.weight}<span className="text-[10px] text-slate-400 ml-0.5">kg</span></div>
+                                                                <div className="text-slate-300 dark:text-slate-600 text-xs">×</div>
+                                                                <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{set.reps}<span className="text-[10px] text-slate-400 ml-0.5">次</span></div>
                                                             </div>
-                                                            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 px-3 py-1.5 rounded-xl">
-                                                                <span className="text-xs font-bold text-slate-400">{emojiLabel}</span>
-                                                                <div className="text-2xl filter drop-shadow-sm" title={emojiFeeling?.label}>{emoji}</div>
+                                                            <div className="flex flex-col items-center justify-center w-full pt-2 border-t border-slate-50 dark:border-slate-700/50">
+                                                                <span className="text-[10px] font-bold text-slate-400 mb-1">{emojiLabel}</span>
+                                                                <div className="text-2xl filter drop-shadow-sm leading-none" title={emojiFeeling?.label}>{emoji}</div>
                                                             </div>
                                                         </div>
                                                     )
