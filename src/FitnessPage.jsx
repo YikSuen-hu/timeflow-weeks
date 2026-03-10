@@ -260,7 +260,6 @@ export default function FitnessPage() {
                         </div>
                     </div>
                 </div>
-
             </div>
 
             {/* Middle List */}
