@@ -135,10 +135,10 @@ export default function FitnessPage() {
     }, [todayRecords, totalSetsToday]);
 
     return (
-        <div className="pb-20 pt-6 px-4 md:px-6 lg:px-8 max-w-5xl mx-auto min-h-screen animate-fade-in-up">
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <Dumbbell size={28} />
+        <div className="pb-20 pt-6 px-4 md:px-5 max-w-[1240px] mx-auto min-h-screen animate-fade-in-up">
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <Dumbbell size={24} />
                 </div>
                 <div>
                     <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">身材管理</h1>
@@ -146,12 +146,12 @@ export default function FitnessPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
                 {/* Left Form */}
-                <div className="xl:col-span-1 space-y-6">
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                        <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2">
-                            <span className="w-2 h-6 bg-indigo-500 rounded-full inline-block"></span>
+                <div className="lg:col-span-4 xl:col-span-3 space-y-5 order-2 lg:order-1">
+                    <div className="bg-white dark:bg-slate-800 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+                        <h2 className="text-[17px] font-bold text-slate-700 dark:text-slate-200 mb-5 flex items-center gap-2">
+                            <span className="w-1.5 h-5 bg-indigo-500 rounded-full inline-block shadow-sm"></span>
                             今日训练录入
                         </h2>
 
@@ -261,63 +261,11 @@ export default function FitnessPage() {
                     </div>
                 </div>
 
-                {/* Right List & Summary */}
-                <div className="xl:col-span-2 space-y-6">
-                    {summary && (
-                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 shadow-md shadow-indigo-500/20 text-white relative overflow-hidden">
-                            <div className="absolute -right-6 -top-6 opacity-10">
-                                <BarChart2 size={120} strokeWidth={3} />
-                            </div>
-
-                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 opacity-90">
-                                <Activity size={20} />
-                                今日训练速览
-                            </h2>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
-                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
-                                        <Target size={14} /> 训练部位
-                                    </div>
-                                    <div className="font-extrabold text-lg truncate" title={summary.targetMuscles}>
-                                        {summary.targetMuscles}
-                                    </div>
-                                </div>
-
-                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
-                                        <Dumbbell size={14} /> 训练总量
-                                    </div>
-                                    <div className="font-extrabold text-lg">
-                                        {summary.totalExercises} <span className="text-sm font-normal opacity-80">动作</span> / {summary.totalSets} <span className="text-sm font-normal opacity-80">组</span>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
-                                        <Flame size={14} /> 训练总容量
-                                    </div>
-                                    <div className="font-extrabold text-lg flex items-baseline gap-1">
-                                        {summary.totalVolume.toLocaleString()} <span className="text-xs font-normal opacity-70">kg</span>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                                    <div className="text-indigo-100 text-xs font-bold mb-1 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
-                                        今日状态
-                                    </div>
-                                    <div className="font-extrabold text-lg flex items-center gap-2">
-                                        <span className="text-2xl drop-shadow-sm">{summary.statusEmoji}</span>
-                                        <span>{summary.statusLabel}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                {/* Middle List */}
+                <div className="lg:col-span-8 xl:col-span-6 space-y-5 order-3 lg:order-2">
+                    <div className="bg-slate-50/50 dark:bg-slate-800/20 rounded-[28px] p-5 md:p-6 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[500px]">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
                                 <CalendarIcon size={24} className="text-indigo-500" />
                                 今日记录列表 <span className="text-slate-400 font-mono text-sm ml-2 bg-slate-100 dark:bg-slate-700/50 px-3 py-1 rounded-full">{today}</span>
                             </h2>
@@ -339,25 +287,25 @@ export default function FitnessPage() {
                                     const displaySets = record.sets ? record.sets : [{ id: record.id + '_legacy', weight: record.weight, reps: record.reps, feeling: record.feeling }];
 
                                     return (
-                                        <div key={record.id} className="p-5 md:p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60 hover:shadow-md transition-all group">
-                                            <div className="flex justify-between items-center mb-5 border-b border-slate-200 dark:border-slate-700/50 pb-4">
-                                                <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3 text-lg md:text-xl">
-                                                    <div className="w-2 h-6 bg-indigo-400 rounded-full"></div>
+                                        <div key={record.id} className="mb-6 group">
+                                            <div className="flex justify-between items-center mb-3 p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700 transition-all hover:border-indigo-200 dark:hover:border-indigo-500/30">
+                                                <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5 text-base md:text-[17px]">
+                                                    <div className="w-1.5 h-5 bg-indigo-500 rounded-full shadow-sm"></div>
                                                     {record.exercise}
-                                                    <span className="text-[11px] font-bold text-slate-500 bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-full uppercase tracking-wider relative -top-0.5">
+                                                    <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full uppercase tracking-wider relative -top-0.5 ml-1">
                                                         {dayName}
                                                     </span>
                                                 </div>
                                                 <button
                                                     onClick={() => deleteRecord(record.id)}
-                                                    className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-2 bg-slate-50 dark:bg-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl shadow-sm border border-slate-100 dark:border-slate-600 transition-all opacity-0 group-hover:opacity-100"
                                                     title="删除此锻炼项目"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
 
-                                            <div className="flex flex-wrap gap-x-3 gap-y-4 pt-2 mt-2">
+                                            <div className="flex flex-wrap gap-x-2.5 gap-y-3 px-1">
                                                 {displaySets.map((set, setIdx) => {
                                                     const emojiFeeling = EMOJI_FEELINGS.find(f => f.id === set.feeling);
                                                     const emoji = emojiFeeling?.emoji || '⚡';
@@ -399,6 +347,63 @@ export default function FitnessPage() {
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Right Summary */}
+                <div className="lg:col-span-12 xl:col-span-3 space-y-5 order-1 lg:order-3">
+                    {summary && (
+                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[28px] p-5 xl:p-6 shadow-md shadow-indigo-500/20 text-white relative overflow-hidden xl:sticky xl:top-6">
+                            <div className="absolute -right-6 -top-6 opacity-10">
+                                <BarChart2 size={140} strokeWidth={3} />
+                            </div>
+
+                            <h2 className="text-[17px] font-bold mb-5 flex items-center gap-2 opacity-95">
+                                <Activity size={20} className="opacity-90" />
+                                今日训练速览
+                            </h2>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-3.5 relative z-10">
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all">
+                                    <div className="text-indigo-100 text-[11px] font-bold mb-1.5 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        <Target size={14} /> 训练部位
+                                    </div>
+                                    <div className="font-extrabold text-lg truncate" title={summary.targetMuscles}>
+                                        {summary.targetMuscles}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all">
+                                    <div className="text-indigo-100 text-[11px] font-bold mb-1.5 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        <Dumbbell size={14} /> 训练总量
+                                    </div>
+                                    <div className="font-extrabold text-lg">
+                                        {summary.totalExercises} <span className="text-xs font-normal opacity-80">动作</span>
+                                        <div className="h-0.5 xl:h-1"></div>
+                                        {summary.totalSets} <span className="text-xs font-normal opacity-80">组</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all">
+                                    <div className="text-indigo-100 text-[11px] font-bold mb-1.5 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        <Flame size={14} /> 训练总容量
+                                    </div>
+                                    <div className="font-extrabold text-xl flex items-baseline gap-1">
+                                        {summary.totalVolume.toLocaleString()} <span className="text-xs font-normal opacity-70">kg</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all">
+                                    <div className="text-indigo-100 text-[11px] font-bold mb-1.5 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                                        今日状态
+                                    </div>
+                                    <div className="font-extrabold text-xl flex items-center gap-2.5">
+                                        <span className="text-3xl drop-shadow-md leading-none">{summary.statusEmoji}</span>
+                                        <span className="text-base">{summary.statusLabel}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
