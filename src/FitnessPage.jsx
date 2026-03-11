@@ -3,7 +3,7 @@ import { ChevronRight, Dumbbell, Calendar as CalendarIcon, Save, Trash2, Plus, X
 
 const FITNESS_DAYS = [
     { id: 'chest', name: '胸部 (Chest)', exercises: ['平板卧推', '上斜哑铃卧推', '下斜卧推', '蝴蝶机夹胸', '绳索飞鸟', '器械推胸', '俯卧撑'] },
-    { id: 'back', name: '背部 (Back)', exercises: ['引体向上', '高位下拉', '杠铃划船', '坐姿划船', '单臂哑铃划船', '直臂下拉', '硬拉'] },
+    { id: 'back', name: '背部 (Back)', exercises: ['引体向上', '高位下拉', '杠铃划船', '坐姿划船', '坐姿V把划船', '单臂哑铃划船', '直臂下拉', '硬拉'] },
     { id: 'legs', name: '腿部 (Legs)', exercises: ['深蹲', '倒蹬', '腿屈伸', '腿弯举', '罗马尼亚硬拉', '保加利亚分腿蹲', '提踵'] },
     { id: 'shoulders', name: '肩部 (Shoulders)', exercises: ['杠铃推举', '哑铃侧平举', '坐姿哑铃推举', '反向飞鸟', '前平举', '面拉', '侧卧后束飞鸟'] },
     { id: 'arms', name: '手臂 (Arms)', exercises: ['杠铃弯举', '哑铃交替弯举', '绳索下压', '颈后臂屈伸', '牧师椅弯举', '锤式弯举'] },
